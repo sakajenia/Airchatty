@@ -1,0 +1,32 @@
+{
+  "name": "airchatty",
+  "version": "1.0.0",
+  "description": "Turn a written conversation into an Airbnb-style chat reel video (MP4).",
+  "private": true,
+  "scripts": {
+    "start": "ts-node app/server.ts",
+    "dev": "remotion studio src/Root.tsx",
+    "render": "remotion render src/Root.tsx ChatReel out/sample.mp4",
+    "make-assets": "ts-node scripts/make-assets.ts"
+  },
+  "dependencies": {
+    "@remotion/bundler": "^4.0.0",
+    "@remotion/cli": "^4.0.0",
+    "@remotion/player": "^4.0.0",
+    "@remotion/renderer": "^4.0.0",
+    "express": "^4.19.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "esbuild": "^0.21.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
+  }
+}
