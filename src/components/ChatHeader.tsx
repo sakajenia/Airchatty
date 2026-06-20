@@ -75,12 +75,14 @@ export const StatusBar: React.FC = () => (
 
 export type HeaderAvatar = {name: string; src: string};
 
-// Airbnb-style overlapping group cluster (photos first, letter avatars last).
+// Airbnb group cluster, measured from the reference: the photos sit side by
+// side and just *touch* (the right one raised), each fully visible — they do
+// NOT cover one another. A letter avatar tucks into the bottom-right.
 const CLUSTERS: Record<number, {size: number; x: number; y: number}[]> = {
-  1: [{size: 100, x: 25, y: 6}],
-  2: [{size: 96, x: 0, y: 14}, {size: 90, x: 60, y: 0}],
-  3: [{size: 96, x: 0, y: 16}, {size: 90, x: 60, y: 0}, {size: 54, x: 92, y: 62}],
-  4: [{size: 96, x: 0, y: 14}, {size: 90, x: 60, y: 0}, {size: 54, x: 92, y: 62}, {size: 54, x: 40, y: 66}],
+  1: [{size: 96, x: 33, y: 14}],
+  2: [{size: 90, x: 0, y: 20}, {size: 80, x: 84, y: 0}],
+  3: [{size: 90, x: 0, y: 23}, {size: 78, x: 84, y: 0}, {size: 47, x: 106, y: 76}],
+  4: [{size: 90, x: 0, y: 23}, {size: 78, x: 84, y: 0}, {size: 47, x: 106, y: 76}, {size: 47, x: 48, y: 80}],
 };
 
 const AvatarCluster: React.FC<{participants: HeaderAvatar[]}> = ({participants}) => {
@@ -88,7 +90,7 @@ const AvatarCluster: React.FC<{participants: HeaderAvatar[]}> = ({participants})
   const n = Math.min(Math.max(sorted.length, 1), 4);
   const spec = CLUSTERS[n];
   return (
-    <div style={{position: 'relative', width: 150, height: 122}}>
+    <div style={{position: 'relative', width: 162, height: 130}}>
       {sorted.slice(0, 4).map((p, i) => {
         const s = spec[i] ?? spec[spec.length - 1];
         return (
@@ -100,7 +102,7 @@ const AvatarCluster: React.FC<{participants: HeaderAvatar[]}> = ({participants})
               top: s.y,
               zIndex: i + 1,
               borderRadius: '50%',
-              border: `4px solid ${theme.white}`,
+              border: `3px solid ${theme.white}`,
               background: theme.white,
               lineHeight: 0,
             }}
