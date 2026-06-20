@@ -98,15 +98,19 @@ const buildKeystrokes = (
     }
   };
 
-  // The "honest" draft: type it fully, hesitate, then delete it all (the delete
-  // accelerates like holding the backspace key), then a beat before retyping.
+  // The "honest" draft: type it fully, hesitate, then delete it letter by letter.
   if (draft) {
     typeString(draft);
     at += charDur * 8; // the host re-reads it and thinks twice
-    const delDur = Math.max(1.4, charDur * 0.55);
+    // Delete one letter at a time with a gentle acceleration that CAPS at a
+    // floor, so every letter stays individually visible (it never speeds up so
+    // much that it looks like whole words vanish at once).
+    const startDur = charDur * 1.15;
+    const floorDur = Math.max(2.6, charDur * 0.85);
     for (let i = draft.length - 1; i >= 0; i--) {
-      const accel = i < draft.length - 6 ? 0.7 : 1; // speeds up while held
-      push({kind: 'delete'}, delDur * accel);
+      const deleted = draft.length - 1 - i;
+      const dur = Math.max(floorDur, startDur - deleted * (charDur * 0.05));
+      push({kind: 'delete'}, dur);
     }
     at += charDur * 4; // pause on the empty field before writing the polite reply
   }

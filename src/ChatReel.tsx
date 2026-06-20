@@ -81,7 +81,12 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
       if (frame >= readAt && !readerIds.includes(s.sender)) readerIds.push(s.sender);
     }
     if (readerIds.length === 0 && frame >= lastHost.revealFrame + fps * 1.4 && people.length) {
-      readerIds.push('p0'); // passive: the first person has read it
+      // Nobody has replied yet — passively credit the read to whoever actually
+      // replies next (falling back to the first person if it's the last message).
+      const nextReplier = segments.find(
+        (s): s is MessageSeg => s.kind === 'message' && s.sender !== 'host' && s.index > lastHost.index,
+      );
+      readerIds.push(nextReplier ? nextReplier.sender : 'p0');
     }
     if (readerIds.length > 0) {
       readIdx = lastHost.index;
