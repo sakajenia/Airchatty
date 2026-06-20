@@ -126,16 +126,16 @@ export const ChatHeader: React.FC<{
       >
         <svg
           style={{position: 'absolute', left: 44}}
-          width="46"
-          height="46"
+          width="48"
+          height="48"
           viewBox="0 0 24 24"
           fill="none"
           stroke={theme.ink}
-          strokeWidth="2"
+          strokeWidth="2.1"
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          <path d="M15 18l-6-6 6-6" />
+          <path d="M20 12H5M11 6l-6 6 6 6" />
         </svg>
 
         <AvatarCluster participants={participants} />
@@ -144,13 +144,12 @@ export const ChatHeader: React.FC<{
           style={{
             position: 'absolute',
             right: 44,
-            border: `1px solid ${theme.hairline}`,
             borderRadius: 40,
-            padding: '12px 30px',
+            padding: '15px 32px',
             fontSize: 28,
             fontWeight: 600,
             color: theme.ink,
-            background: theme.white,
+            background: '#ebebeb',
           }}
         >
           Details
@@ -161,11 +160,22 @@ export const ChatHeader: React.FC<{
         {title}
       </div>
       <div style={{fontSize: 27, fontWeight: 500, color: theme.ash, marginTop: 7}}>{subtitle}</div>
-      <div style={{display: 'flex', alignItems: 'center', gap: 10, marginTop: 9, color: theme.ash}}>
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={theme.ash} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 5h7M7.5 5c0 4-2 7-5 8.5M5 9c0 2.5 2.5 4.5 5.5 5.5" />
-          <path d="M13 19l4-9 4 9M14.5 16h5" />
-        </svg>
+      <div style={{display: 'flex', alignItems: 'center', gap: 12, marginTop: 10, color: theme.ash}}>
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            background: theme.ink,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1,
+          }}
+        >
+          <span style={{color: '#fff', fontSize: 18, fontWeight: 700, lineHeight: 1}}>文</span>
+          <span style={{color: '#fff', fontSize: 15, fontWeight: 700, lineHeight: 1}}>A</span>
+        </div>
         <span style={{fontSize: 24, fontWeight: 500}}>Translation on</span>
       </div>
     </div>

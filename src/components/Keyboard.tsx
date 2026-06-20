@@ -13,7 +13,8 @@ const ROW3 = 'zxcvbnm'.split('');
 const KB_BG = '#d1d4db';
 const KEY = '#ffffff';
 const KEY_GREY = '#abb0bb';
-const KEY_SHADOW = '0 2px 0 rgba(0,0,0,0.28)';
+// Soft iOS key lift — a blurred shadow below the key, NOT a hard outline.
+const KEY_SHADOW = '0 2px 4px rgba(0,0,0,0.2)';
 
 const KeyCap: React.FC<{
   label?: string;
@@ -28,9 +29,9 @@ const KeyCap: React.FC<{
     style={{
       flex: width ? undefined : flex ?? 1,
       width,
-      height: 124,
+      height: 112,
       background: grey ? KEY_GREY : KEY,
-      borderRadius: 12,
+      borderRadius: 11,
       boxShadow: KEY_SHADOW,
       display: 'flex',
       alignItems: 'center',
@@ -99,7 +100,7 @@ const Row: React.FC<{children: React.ReactNode; pad?: number}> = ({children, pad
   </div>
 );
 
-export const KEYBOARD_HEIGHT = 712;
+export const KEYBOARD_HEIGHT = 690;
 
 export const Keyboard: React.FC<{
   pressedKey: string | null;
@@ -176,8 +177,10 @@ export const Keyboard: React.FC<{
               <circle cx="15" cy="10" r="1.1" fill={theme.ink} stroke="none" />
             </svg>
           </KeyCap>
-          <KeyCap flex={1} fontSize={30}>
-            <span style={{color: theme.mute}}>space</span>
+          <KeyCap grey flex={1}>
+            <div style={{width: '100%', textAlign: 'right', paddingRight: 26, fontSize: 26, color: 'rgba(0,0,0,0.38)'}}>
+              EN IT
+            </div>
           </KeyCap>
           <KeyCap grey width={196} fontSize={32} label="return" />
         </Row>
