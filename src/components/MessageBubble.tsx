@@ -31,36 +31,51 @@ const ReactionBadge: React.FC<{emoji: string; isYou: boolean; revealFrame: numbe
     fps,
     config: {damping: 12, mass: 0.6},
   });
+  const isHeart = /[❤\u{1F90D}-\u{1F90E}\u{1F498}-\u{1F49F}]/u.test(emoji);
   // Sits in the bubble's bottom corner (right for the other person, left for
   // you), in a light-grey circle — exactly like the Airbnb reference.
   return (
     <div style={{display: 'flex', justifyContent: isYou ? 'flex-start' : 'flex-end', marginTop: -28, zIndex: 3}}>
-      <div
-        style={{
-          transform: `translateX(${isYou ? -14 : 14}px) scale(${pop})`,
-          opacity: pop,
-        }}
-      >
+      <div style={{transform: `translateX(${isYou ? -16 : 16}px) scale(${pop})`, opacity: pop}}>
         <div
           style={{
-            width: 80,
-            height: 80,
+            width: 88,
+            height: 88,
             borderRadius: '50%',
-            background: '#f7f7f7',
-            border: '1px solid #e6e6e6',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            background: '#f4f4f4',
+            border: '1px solid #e4e4e4',
+            boxShadow: '0 3px 10px rgba(0,0,0,0.10)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 42,
+            fontSize: 46,
           }}
         >
-          {emoji}
+          {isHeart ? <GlossyHeart size={50} /> : emoji}
         </div>
       </div>
     </div>
   );
 };
+
+/** A glossy red heart (gradient + highlight) so it matches the iOS look on any
+ *  render machine, instead of the flat fallback emoji. */
+const GlossyHeart: React.FC<{size: number}> = ({size}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24">
+    <defs>
+      <linearGradient id="heartGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#f5897c" />
+        <stop offset="0.45" stopColor="#e2412f" />
+        <stop offset="1" stopColor="#bf1c12" />
+      </linearGradient>
+    </defs>
+    <path
+      d="M12 21s-8.5-5.9-8.5-11.4C3.5 6.4 5.6 4.4 8 4.4c1.9 0 3.4 1.1 4 2.7.6-1.6 2.1-2.7 4-2.7 2.4 0 4.5 2 4.5 5.2C20.5 15.1 12 21 12 21Z"
+      fill="url(#heartGrad)"
+    />
+    <ellipse cx="8.4" cy="8.2" rx="2.5" ry="1.7" fill="#fff" opacity="0.33" transform="rotate(-32 8.4 8.2)" />
+  </svg>
+);
 
 export const MessageBubble: React.FC<ChatBubbleProps> = ({
   text,

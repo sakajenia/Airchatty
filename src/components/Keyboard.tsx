@@ -13,7 +13,7 @@ const ROW3 = 'zxcvbnm'.split('');
 
 const KEY = 'rgba(255,255,255,0.96)';
 const KEY_SHADOW = '0 2px 5px rgba(0,0,0,0.16)';
-const KEY_H = 104;
+const KEY_H = 116;
 
 const KeyCap: React.FC<{
   label?: string;
@@ -22,14 +22,14 @@ const KeyCap: React.FC<{
   width?: number;
   children?: React.ReactNode;
   fontSize?: number;
-}> = ({label, pressed, flex, width, children, fontSize = 57}) => (
+}> = ({label, pressed, flex, width, children, fontSize = 70}) => (
   <div
     style={{
       flex: width ? undefined : flex ?? 1,
       width,
       height: KEY_H,
       background: KEY,
-      borderRadius: 16,
+      borderRadius: 14,
       boxShadow: KEY_SHADOW,
       display: 'flex',
       alignItems: 'center',
@@ -70,10 +70,10 @@ const KeyCap: React.FC<{
 );
 
 const Row: React.FC<{children: React.ReactNode; pad?: number}> = ({children, pad = 0}) => (
-  <div style={{display: 'flex', gap: 13, padding: `0 ${pad}px`, justifyContent: 'center'}}>{children}</div>
+  <div style={{display: 'flex', gap: 17, padding: `0 ${pad}px`, justifyContent: 'center'}}>{children}</div>
 );
 
-export const KEYBOARD_HEIGHT = 668;
+export const KEYBOARD_HEIGHT = 716;
 
 export const Keyboard: React.FC<{
   pressedKey: string | null;
@@ -108,7 +108,7 @@ export const Keyboard: React.FC<{
         ))}
       </div>
 
-      <div style={{display: 'flex', flexDirection: 'column', gap: 32, padding: '24px 14px 0'}}>
+      <div style={{display: 'flex', flexDirection: 'column', gap: 34, padding: '24px 16px 0'}}>
         <Row>
           {ROW1.map((k) => (
             <KeyCap key={k} label={k} pressed={pressedKey === k} />

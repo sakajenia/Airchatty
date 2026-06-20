@@ -160,24 +160,6 @@ export const ChatHeader: React.FC<{
         {title}
       </div>
       <div style={{fontSize: 27, fontWeight: 500, color: theme.ash, marginTop: 7}}>{subtitle}</div>
-      <div style={{display: 'flex', alignItems: 'center', gap: 12, marginTop: 10, color: theme.ash}}>
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            background: theme.ink,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 1,
-          }}
-        >
-          <span style={{color: '#fff', fontSize: 18, fontWeight: 700, lineHeight: 1}}>文</span>
-          <span style={{color: '#fff', fontSize: 15, fontWeight: 700, lineHeight: 1}}>A</span>
-        </div>
-        <span style={{fontSize: 24, fontWeight: 500}}>Translation on</span>
-      </div>
     </div>
   );
 };
