@@ -31,7 +31,6 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
   const headerTitle =
     names.length <= 3 ? names.join(', ') : `${names.slice(0, 2).join(', ')} and ${names.length - 2} others`;
   const headerSubtitle = headerApt ? `${headerDate} • ${headerApt}` : headerDate;
-  const readerName = people[people.length - 1]?.name ?? 'them';
 
   const visible = segments.filter((s) => frame >= s.revealFrame);
   const typing = segments.find(
@@ -63,14 +62,35 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
     }
   }
 
-  // Read receipt: only the latest delivered host message shows "Read by …",
-  // a beat after it lands (the guest "reads" it).
+  // Read receipt — conditional, like the real app: only the LATEST host message
+  // shows it, and it reflects who has actually read it. A participant has read
+  // the host's message once they start replying to it (after it); the text
+  // grows "Read by X" → "Read by X, Y" → "Read by all". If nobody has replied
+  // yet, after a beat one person passively reads it.
   const hostVisible = visible.filter(
     (s): s is MessageSeg => s.kind === 'message' && s.sender === 'host',
   );
   const lastHost = hostVisible[hostVisible.length - 1];
-  const readIdx =
-    lastHost && frame >= lastHost.revealFrame + fps * 1 ? lastHost.index : -1;
+  let readIdx = -1;
+  let readReceiptText = '';
+  if (lastHost) {
+    const readerIds: string[] = [];
+    for (const s of segments) {
+      if (s.kind !== 'message' || s.sender === 'host' || s.index <= lastHost.index) continue;
+      const readAt = s.typingStartFrame ?? s.revealFrame;
+      if (frame >= readAt && !readerIds.includes(s.sender)) readerIds.push(s.sender);
+    }
+    if (readerIds.length === 0 && frame >= lastHost.revealFrame + fps * 1.4 && people.length) {
+      readerIds.push('p0'); // passive: the first person has read it
+    }
+    if (readerIds.length > 0) {
+      readIdx = lastHost.index;
+      const all = readerIds.length >= people.length;
+      readReceiptText = all
+        ? 'Read by all'
+        : `Read by ${readerIds.map((id) => personFor(id, props).name).join(', ')}`;
+    }
+  }
 
   // Top-anchored chat that auto-scrolls up only once it overflows. In keyboard
   // mode the composer + glass keyboard are overlaid on the bottom (so the glass
@@ -110,7 +130,7 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
                   avatarSrc={p.avatar}
                   isFirstOfGroup={s.isFirstOfGroup}
                   isLastOfGroup={s.isLastOfGroup}
-                  readReceipt={s.index === readIdx ? `Read by ${readerName}` : undefined}
+                  readReceipt={s.index === readIdx ? readReceiptText : undefined}
                 />
               );
             })}

@@ -20,7 +20,7 @@ export const theme = {
   online: '#34c759',
 
   // Chat-specific
-  incomingBubble: '#f2f2f2', // light grey "Soft Cloud" bubble for the other person
+  incomingBubble: '#e8e8e8', // slightly darker grey bubble for the other people
   incomingText: '#222222',
   outgoingBubble: '#3a3a3a', // dark charcoal bubble for "you" (NOT pink)
   outgoingText: '#ffffff',
