@@ -75,10 +75,14 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
   const readIdx =
     lastHost && frame >= lastHost.revealFrame + fps * 1 ? lastHost.index : -1;
 
-  // Top-anchored chat that auto-scrolls up only once it overflows.
+  // Top-anchored chat that auto-scrolls up only once it overflows. In keyboard
+  // mode the composer + glass keyboard are overlaid on the bottom (so the glass
+  // can frost the chat behind it); a spacer keeps the latest bubble above them.
   const [areaRef, areaH] = useClientHeight();
   const [contentRef, contentH] = useNaturalHeight();
-  const scroll = areaH && contentH ? Math.max(0, contentH + 28 - areaH) : 0;
+  const [overlayRef, overlayH] = useClientHeight();
+  const bottomInset = keyboard ? overlayH ?? 0 : 0;
+  const scroll = areaH && contentH ? Math.max(0, contentH + 12 - areaH) : 0;
 
   return (
     <AbsoluteFill style={{background: theme.white, fontFamily: theme.font}}>
@@ -121,18 +125,20 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
                 isYou={typing.isYou}
               />
             )}
+            {/* keeps the newest bubble above the overlaid composer + keyboard */}
+            <div style={{height: bottomInset}} />
           </div>
         </div>
 
-        {keyboard ? (
-          <>
-            <Composer text={composerText} active={!!composerText} sendActive={sendActive} />
-            <Keyboard pressedKey={pressedKey} suggestions={suggestionsFor(composerText)} />
-          </>
-        ) : (
-          <InputBar />
-        )}
+        {!keyboard && <InputBar />}
       </div>
+
+      {keyboard && (
+        <div ref={overlayRef} style={{position: 'absolute', left: 0, right: 0, bottom: 0}}>
+          <Composer text={composerText} active={!!composerText} sendActive={sendActive} />
+          <Keyboard pressedKey={pressedKey} suggestions={suggestionsFor(composerText)} />
+        </div>
+      )}
 
       {/* Audio: a pop when each message is sent/received + a soft music bed. */}
       {sound &&

@@ -17,7 +17,16 @@ export const Composer: React.FC<{
   const caretOn = active && Math.floor(frame / 16) % 2 === 0;
 
   return (
-    <div style={{background: theme.white, padding: '14px 24px 18px', fontFamily: theme.font, flexShrink: 0}}>
+    <div
+      style={{
+        background: 'rgba(252,252,253,0.86)',
+        backdropFilter: 'blur(30px) saturate(160%)',
+        WebkitBackdropFilter: 'blur(30px) saturate(160%)',
+        padding: '14px 24px 18px',
+        fontFamily: theme.font,
+        flexShrink: 0,
+      }}
+    >
       <div
         style={{
           border: `1px solid ${theme.hairline}`,

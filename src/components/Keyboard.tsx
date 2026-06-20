@@ -10,11 +10,11 @@ const ROW1 = 'qwertyuiop'.split('');
 const ROW2 = 'asdfghjkl'.split('');
 const ROW3 = 'zxcvbnm'.split('');
 
-const KB_BG = '#d1d4db';
-const KEY = '#ffffff';
-const KEY_GREY = '#abb0bb';
-// Soft iOS key lift — a blurred shadow below the key, NOT a hard outline.
-const KEY_SHADOW = '0 2px 4px rgba(0,0,0,0.2)';
+// iOS 26 "Liquid Glass": all keys are bright white, the panel is a frosted
+// translucent layer with rounded top corners.
+const KEY = 'rgba(255,255,255,0.95)';
+const KEY_GREY = 'rgba(255,255,255,0.95)';
+const KEY_SHADOW = '0 2px 5px rgba(0,0,0,0.16)';
 
 const KeyCap: React.FC<{
   label?: string;
@@ -24,14 +24,14 @@ const KeyCap: React.FC<{
   width?: number;
   children?: React.ReactNode;
   fontSize?: number;
-}> = ({label, pressed, grey, flex, width, children, fontSize = 46}) => (
+}> = ({label, pressed, grey, flex, width, children, fontSize = 52}) => (
   <div
     style={{
       flex: width ? undefined : flex ?? 1,
       width,
-      height: 112,
+      height: 114,
       background: grey ? KEY_GREY : KEY,
-      borderRadius: 11,
+      borderRadius: 16,
       boxShadow: KEY_SHADOW,
       display: 'flex',
       alignItems: 'center',
@@ -110,7 +110,12 @@ export const Keyboard: React.FC<{
     <div
       style={{
         height: KEYBOARD_HEIGHT,
-        background: KB_BG,
+        background: 'rgba(214,215,221,0.62)',
+        backdropFilter: 'blur(40px) saturate(165%)',
+        WebkitBackdropFilter: 'blur(40px) saturate(165%)',
+        borderTopLeftRadius: 46,
+        borderTopRightRadius: 46,
+        borderTop: '1px solid rgba(255,255,255,0.55)',
         fontFamily: theme.font,
         display: 'flex',
         flexDirection: 'column',
