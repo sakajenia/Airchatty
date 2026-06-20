@@ -77,10 +77,10 @@ export type HeaderAvatar = {name: string; src: string};
 
 // Airbnb-style overlapping group cluster (photos first, letter avatars last).
 const CLUSTERS: Record<number, {size: number; x: number; y: number}[]> = {
-  1: [{size: 86, x: 26, y: 10}],
-  2: [{size: 80, x: 2, y: 16}, {size: 76, x: 56, y: 0}],
-  3: [{size: 80, x: 0, y: 16}, {size: 74, x: 54, y: 0}, {size: 56, x: 74, y: 50}],
-  4: [{size: 80, x: 0, y: 14}, {size: 74, x: 54, y: 0}, {size: 56, x: 74, y: 50}, {size: 56, x: 28, y: 52}],
+  1: [{size: 100, x: 25, y: 6}],
+  2: [{size: 96, x: 0, y: 14}, {size: 90, x: 60, y: 0}],
+  3: [{size: 96, x: 0, y: 16}, {size: 90, x: 60, y: 0}, {size: 54, x: 92, y: 62}],
+  4: [{size: 96, x: 0, y: 14}, {size: 90, x: 60, y: 0}, {size: 54, x: 92, y: 62}, {size: 54, x: 40, y: 66}],
 };
 
 const AvatarCluster: React.FC<{participants: HeaderAvatar[]}> = ({participants}) => {
@@ -88,7 +88,7 @@ const AvatarCluster: React.FC<{participants: HeaderAvatar[]}> = ({participants})
   const n = Math.min(Math.max(sorted.length, 1), 4);
   const spec = CLUSTERS[n];
   return (
-    <div style={{position: 'relative', width: 138, height: 112}}>
+    <div style={{position: 'relative', width: 150, height: 122}}>
       {sorted.slice(0, 4).map((p, i) => {
         const s = spec[i] ?? spec[spec.length - 1];
         return (
@@ -138,7 +138,7 @@ export const ChatHeader: React.FC<{
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          minHeight: 84,
+          minHeight: 126,
         }}
       >
         <svg
@@ -175,12 +175,12 @@ export const ChatHeader: React.FC<{
 
       <div
         style={{
-          fontSize: 36,
+          fontSize: 46,
           fontWeight: 700,
           color: theme.ink,
-          marginTop: 14,
-          letterSpacing: -0.3,
-          maxWidth: 860,
+          marginTop: 16,
+          letterSpacing: -0.4,
+          maxWidth: 900,
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -190,11 +190,11 @@ export const ChatHeader: React.FC<{
       </div>
       <div
         style={{
-          fontSize: 27,
+          fontSize: 34,
           fontWeight: 500,
           color: theme.ash,
-          marginTop: 7,
-          maxWidth: 760,
+          marginTop: 10,
+          maxWidth: 880,
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
