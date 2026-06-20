@@ -118,7 +118,8 @@ app.use(express.static(path.join(ROOT, 'public')));
 
 (async () => {
   await buildFrontend();
-  app.listen(PORT, () => {
+  // Bind to 0.0.0.0 so hosting platforms (Render, Railway, Fly…) can route to it.
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n  Airchatty is running →  http://localhost:${PORT}\n`);
   });
 })();

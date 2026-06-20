@@ -41,6 +41,34 @@ Vedrai l'interfaccia: scrivi i messaggi → guarda l'anteprima a destra → prem
 
 ---
 
+## 🌐 Usarlo da interfaccia WEB (link online, senza installare niente)
+
+Vuoi un vero indirizzo web (es. `https://airchatty.onrender.com`) apribile da
+qualsiasi browser o telefono? Si pubblica l'app online con un deploy. Nel progetto
+c'è già tutto pronto (`Dockerfile` + `render.yaml`). Percorso più semplice per
+chi non programma → **Render.com**:
+
+1. Vai su <https://render.com> e crea un account (puoi accedere con GitHub).
+2. Clicca **New → Blueprint**.
+3. Collega il repository GitHub `sakajenia/airchatty` e scegli il branch
+   `claude/chat-video-generator-q0hpru`.
+4. Render legge il file `render.yaml`, crea il servizio e fa il build da solo
+   (5–10 min la prima volta — deve scaricare Chromium per generare gli MP4).
+5. Quando è "Live", apri l'URL che ti dà Render: **è la tua interfaccia web**,
+   uguale a quella locale, usabile da telefono.
+
+**Nota sui costi/risorse:** la creazione del video MP4 è pesante (usa Chromium).
+Il piano gratuito di Render (512 MB) può non bastare e andare in errore sui video
+lunghi → consigliato il piano **Starter** (~7 $/mese), già indicato nel
+`render.yaml`. Funziona allo stesso modo anche su Railway o Fly.io con lo stesso
+`Dockerfile`.
+
+> 💡 La parte "scrivi messaggi + anteprima" è leggera; solo il pulsante
+> **Scarica MP4** richiede potenza. Se in futuro vuoi tenere bassi i costi si può
+> spostare solo il rendering su un servizio on-demand.
+
+---
+
 ## Quick start (short version)
 
 ```bash

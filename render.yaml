@@ -1,0 +1,16 @@
+# Render.com Blueprint — deploy Airchatty as a public website with one click.
+# https://render.com/docs/blueprint-spec
+#
+# How to use: push this repo to GitHub, go to render.com → New → Blueprint,
+# pick this repo. Render reads this file and creates the service automatically.
+services:
+  - type: web
+    name: airchatty
+    runtime: docker
+    plan: starter        # 512MB is tight for video rendering — Starter recommended.
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
