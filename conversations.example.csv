@@ -1,8 +1,14 @@
-nome,ospiti,host,domanda,onesto,cordiale,risposta
-luci,2,Lorenzo,"Ciao! Scusa il disturbo 🙂
-Dove si accendono le luci?? Non riesco a trovarle 🙈","Ma è possibile che tu non veda gli interruttori in ogni stanza??","Ciao! Le luci sono di fianco alla porta d'ingresso, sulla destra 😊","Trovate, grazie mille! 🙏"
-checkin,3,Lorenzo,"A che ora possiamo entrare?
-O2: Siamo già arrivati in città 🚗","Il check-in è alle 15 ed è scritto ovunque nell'annuncio...","Ciao! Il check-in è dalle 15:00 🔑
-Vi mando il codice della porta appena pronto","Perfetto, grazie!
-O2: Grazie mille 🙏"
-wifi,2,Giulia,"What's the wifi password?","It's literally printed on the router and in the welcome book...","Hi! The network is CasaSole and the password is on the fridge 📶","Found it, thanks! 🙌"
+chat,ospiti,host,foto_host,da,testo,onesto,foto,foto_pos
+luci,2,Lorenzo,faces/face1.jpg,O1,Ciao! Scusa il disturbo 🙂,,,
+luci,,,,O1,Dove si accendono le luci?? Non riesco a trovarle 🙈,,,
+luci,,,,Host,"Ciao! Le luci sono di fianco alla porta d'ingresso, sulla destra 😊",Ma è possibile che tu non veda gli interruttori in ogni stanza??,,
+luci,,,,O1,Trovate! Grazie mille 🙏,,,
+checkin,3,Lorenzo,faces/face1.jpg,O1,A che ora possiamo entrare?,,,
+checkin,,,,O2,Siamo già arrivati in città 🚗,,,
+checkin,,,,Host,Ciao! Il check-in è dalle 15:00 🔑,Il check-in è alle 15 ed è scritto ovunque nell'annuncio...,,
+checkin,,,,Host,Vi mando il codice della porta appena pronto,,,
+checkin,,,,O1,Perfetto grazie!,,,
+checkin,,,,O2,Grazie mille 🙏,,,
+piscina,2,Giulia,faces/face5.jpg,O1,La piscina è bellissima!! 😍,,faces/face4.jpg,dopo
+piscina,,,,O1,A che ora apre la mattina?,,,
+piscina,,,,Host,Ciao! La piscina è aperta dalle 8:00 alle 20:00 ☀️,Apre quando vi pare tanto è privata...,,
