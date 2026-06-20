@@ -73,25 +73,42 @@ export const StatusBar: React.FC = () => (
   </div>
 );
 
-export type Participant = {name: string; src: string};
+export type HeaderAvatar = {name: string; src: string};
 
-const AvatarCluster: React.FC<{participants: Participant[]}> = ({participants}) => {
-  const size = 76;
+// Airbnb-style overlapping group cluster (photos first, letter avatars last).
+const CLUSTERS: Record<number, {size: number; x: number; y: number}[]> = {
+  1: [{size: 86, x: 26, y: 10}],
+  2: [{size: 80, x: 2, y: 16}, {size: 76, x: 56, y: 0}],
+  3: [{size: 80, x: 0, y: 16}, {size: 74, x: 54, y: 0}, {size: 56, x: 74, y: 50}],
+  4: [{size: 80, x: 0, y: 14}, {size: 74, x: 54, y: 0}, {size: 56, x: 74, y: 50}, {size: 56, x: 28, y: 52}],
+};
+
+const AvatarCluster: React.FC<{participants: HeaderAvatar[]}> = ({participants}) => {
+  const sorted = [...participants].sort((a, b) => (a.src ? 0 : 1) - (b.src ? 0 : 1));
+  const n = Math.min(Math.max(sorted.length, 1), 4);
+  const spec = CLUSTERS[n];
   return (
-    <div style={{display: 'flex', alignItems: 'center'}}>
-      {participants.slice(0, 3).map((p, i) => (
-        <div
-          key={i}
-          style={{
-            marginLeft: i === 0 ? 0 : -22,
-            borderRadius: '50%',
-            border: `3px solid ${theme.white}`,
-            zIndex: participants.length - i,
-          }}
-        >
-          <Avatar name={p.name} src={p.src} size={size} />
-        </div>
-      ))}
+    <div style={{position: 'relative', width: 138, height: 112}}>
+      {sorted.slice(0, 4).map((p, i) => {
+        const s = spec[i] ?? spec[spec.length - 1];
+        return (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              left: s.x,
+              top: s.y,
+              zIndex: i + 1,
+              borderRadius: '50%',
+              border: `4px solid ${theme.white}`,
+              background: theme.white,
+              lineHeight: 0,
+            }}
+          >
+            <Avatar name={p.name} src={p.src} size={s.size} />
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -99,7 +116,7 @@ const AvatarCluster: React.FC<{participants: Participant[]}> = ({participants}) 
 export const ChatHeader: React.FC<{
   title: string;
   subtitle: string;
-  participants: Participant[];
+  participants: HeaderAvatar[];
 }> = ({title, subtitle, participants}) => {
   return (
     <div
@@ -156,10 +173,35 @@ export const ChatHeader: React.FC<{
         </div>
       </div>
 
-      <div style={{fontSize: 36, fontWeight: 700, color: theme.ink, marginTop: 14, letterSpacing: -0.3}}>
+      <div
+        style={{
+          fontSize: 36,
+          fontWeight: 700,
+          color: theme.ink,
+          marginTop: 14,
+          letterSpacing: -0.3,
+          maxWidth: 860,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
         {title}
       </div>
-      <div style={{fontSize: 27, fontWeight: 500, color: theme.ash, marginTop: 7}}>{subtitle}</div>
+      <div
+        style={{
+          fontSize: 27,
+          fontWeight: 500,
+          color: theme.ash,
+          marginTop: 7,
+          maxWidth: 760,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {subtitle}
+      </div>
     </div>
   );
 };

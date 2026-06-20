@@ -74,9 +74,17 @@ export const initialsFromName = (name: string) => {
   return letters.join('') || 'A';
 };
 
-/** A pleasant deterministic avatar color derived from a name. */
-export const avatarColor = (name: string) => {
-  const palette = ['#FF385C', '#1DA1F2', '#34C759', '#FF9500', '#AF52DE', '#FF2D55', '#5856D6'];
+/** A soft pastel background + matching letter colour for initials avatars,
+ *  derived from the name (like the light-blue "M" placeholders in Airbnb). */
+export const avatarColor = (name: string): {bg: string; fg: string} => {
+  const palette = [
+    {bg: '#dce9fb', fg: '#3d7dd8'}, // blue
+    {bg: '#e7e1fb', fg: '#7a5cd0'}, // purple
+    {bg: '#d8efe0', fg: '#2e9c5e'}, // green
+    {bg: '#fbe4dc', fg: '#d8673f'}, // orange
+    {bg: '#fbe0ea', fg: '#d24b80'}, // pink
+    {bg: '#def0f4', fg: '#2f93ad'}, // teal
+  ];
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
   return palette[h % palette.length];

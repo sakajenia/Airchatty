@@ -13,7 +13,7 @@ const defaultProps: ChatProps = {
   ...DEFAULT_PROPS,
   items: parseScript(SAMPLE_SCRIPT, {
     hostName: DEFAULT_PROPS.hostName,
-    guestName: DEFAULT_PROPS.guestName,
+    participants: DEFAULT_PROPS.participants,
   }),
 };
 
@@ -32,7 +32,6 @@ export const RemotionRoot: React.FC = () => {
         const {durationInFrames} = buildTimeline(props.items, {
           fps: FPS,
           speed: props.speed,
-          youSide: props.youSide,
           typingFor: props.typingFor,
           keyboard: props.keyboard,
         });

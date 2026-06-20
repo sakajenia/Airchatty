@@ -1,35 +1,31 @@
-import {ChatItem} from './schema';
+import {ChatItem, Participant} from './schema';
 
 /**
  * Turn a pasted plain-text script into structured chat items.
  *
  * Format (one item per line):
- *   Host: Hello there            -> a message from the host (left/grey or you)
- *   Guest: Hi! What time?        -> a message from the guest
- *   # Today                      -> a centered date separator
- *   +❤️                          -> attaches a reaction to the previous message
+ *   Host: Hello there       -> a message from you (dark, right)
+ *   Giulia: Hi! What time?   -> a message from the participant named "Giulia"
+ *   # Today                  -> a centered date separator
+ *   +❤️                      -> attaches a reaction to the previous message
  *
- * Rules:
- *  - The label before the first ":" decides the side. "host"/"owner" => host,
- *    "guest"/"tourist"/"me"/"you" => guest. The host's/guest's real names also
- *    work as labels (e.g. "Sofia:" or "Maria:").
- *  - A line without a recognized label continues the previous speaker.
- *  - Blank lines are ignored.
+ * The label before the first ":" decides the sender. "host"/"me"/"you" (or the
+ * host's name) => you; a participant's name => that participant. A line without
+ * a recognized label continues the previous speaker.
  */
-const HOST_WORDS = ['host', 'owner', 'cohost', 'co-host', 'h'];
-const GUEST_WORDS = ['guest', 'tourist', 'traveler', 'traveller', 'booker', 'me', 'you', 'g'];
+const HOST_WORDS = ['host', 'owner', 'me', 'io', 'h'];
 
 const firstWord = (s: string) => s.trim().toLowerCase().split(/\s+/)[0] ?? '';
 
 export const parseScript = (
   script: string,
-  names: {hostName?: string; guestName?: string} = {},
+  ctx: {hostName?: string; participants?: Participant[]} = {},
 ): ChatItem[] => {
-  const hostFirst = firstWord(names.hostName ?? '');
-  const guestFirst = firstWord(names.guestName ?? '');
+  const hostFirst = firstWord(ctx.hostName ?? '');
+  const participants = ctx.participants ?? [];
   const lines = script.split(/\r?\n/);
   const items: ChatItem[] = [];
-  let lastSender: 'host' | 'guest' = 'host';
+  let lastSender = participants.length ? 'p0' : 'host';
 
   const lastMessage = () => {
     for (let i = items.length - 1; i >= 0; i--) {
@@ -38,18 +34,24 @@ export const parseScript = (
     return null;
   };
 
+  const senderFor = (label: string): string | null => {
+    const l = label.trim().toLowerCase();
+    if (HOST_WORDS.includes(l) || (hostFirst && l === hostFirst)) return 'host';
+    const idx = participants.findIndex((p) => firstWord(p.name) === l);
+    if (idx >= 0) return `p${idx}`;
+    return null;
+  };
+
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
 
-    // Date separator: "# Today"
     if (line.startsWith('#')) {
       const label = line.replace(/^#+\s*/, '').trim();
       if (label) items.push({type: 'separator', label});
       continue;
     }
 
-    // Reaction: "+❤️" attaches to the previous message
     if (line.startsWith('+') && line.length <= 6) {
       const emoji = line.slice(1).trim();
       const prev = lastMessage();
@@ -58,23 +60,17 @@ export const parseScript = (
     }
 
     const colonIdx = line.indexOf(':');
-    let sender: 'host' | 'guest' | null = null;
+    let sender: string | null = null;
     let text = line;
-
     if (colonIdx > 0 && colonIdx <= 24) {
-      const label = line.slice(0, colonIdx).trim().toLowerCase();
-      const body = line.slice(colonIdx + 1).trim();
-      if (HOST_WORDS.includes(label) || (hostFirst && label === hostFirst)) {
-        sender = 'host';
-        text = body;
-      } else if (GUEST_WORDS.includes(label) || (guestFirst && label === guestFirst)) {
-        sender = 'guest';
-        text = body;
+      const s = senderFor(line.slice(0, colonIdx));
+      if (s) {
+        sender = s;
+        text = line.slice(colonIdx + 1).trim();
       }
     }
-
     if (sender === null) {
-      sender = lastSender; // continuation
+      sender = lastSender;
       text = line;
     }
     if (!text) continue;

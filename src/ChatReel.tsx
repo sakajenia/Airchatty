@@ -10,7 +10,7 @@ import {
 import {ChatProps, personFor} from './schema';
 import {buildTimeline, composerStateAt, MessageSeg} from './timeline';
 import {theme, useClientHeight, useNaturalHeight} from './util';
-import {ChatHeader, StatusBar, Participant} from './components/ChatHeader';
+import {ChatHeader, StatusBar, HeaderAvatar} from './components/ChatHeader';
 import {InputBar} from './components/InputBar';
 import {Composer} from './components/Composer';
 import {Keyboard, keyForChar, suggestionsFor} from './components/Keyboard';
@@ -19,15 +19,19 @@ import {TypingIndicator} from './components/TypingIndicator';
 import {DateSeparator} from './components/DateSeparator';
 
 export const ChatReel: React.FC<ChatProps> = (props) => {
-  const {items, youSide, typingFor, keyboard, headerSubtitle, speed, sound} = props;
+  const {items, typingFor, keyboard, participants: people, headerDate, headerApt, speed, sound} = props;
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
-  const {segments} = buildTimeline(items, {fps, speed, youSide, typingFor, keyboard});
+  const {segments} = buildTimeline(items, {fps, speed, typingFor, keyboard});
 
-  // Header describes the OTHER person (the one you're chatting with).
-  const otherSide = youSide === 'guest' ? 'host' : 'guest';
-  const other = personFor(otherSide, props);
-  const participants: Participant[] = [{name: other.name, src: other.avatar}];
+  // Header: the avatar cluster + names of the people you're chatting with, and
+  // a "date · listing" subtitle that clips with an ellipsis when too long.
+  const cluster: HeaderAvatar[] = people.map((p) => ({name: p.name, src: p.avatar}));
+  const names = people.map((p) => p.name);
+  const headerTitle =
+    names.length <= 3 ? names.join(', ') : `${names.slice(0, 2).join(', ')} and ${names.length - 2} others`;
+  const headerSubtitle = headerApt ? `${headerDate} • ${headerApt}` : headerDate;
+  const readerName = people[people.length - 1]?.name ?? 'them';
 
   const visible = segments.filter((s) => frame >= s.revealFrame);
   const typing = segments.find(
@@ -81,7 +85,7 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
     <AbsoluteFill style={{background: theme.white, fontFamily: theme.font}}>
       <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
         <StatusBar />
-        <ChatHeader title={other.name} subtitle={headerSubtitle} participants={participants} />
+        <ChatHeader title={headerTitle} subtitle={headerSubtitle} participants={cluster} />
 
         <div ref={areaRef} style={{flex: 1, overflow: 'hidden', position: 'relative'}}>
           <div
@@ -106,7 +110,7 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
                   avatarSrc={p.avatar}
                   isFirstOfGroup={s.isFirstOfGroup}
                   isLastOfGroup={s.isLastOfGroup}
-                  readReceipt={s.index === readIdx ? `Read by ${other.name}` : undefined}
+                  readReceipt={s.index === readIdx ? `Read by ${readerName}` : undefined}
                 />
               );
             })}

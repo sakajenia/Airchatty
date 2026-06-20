@@ -62,16 +62,22 @@ app.post('/render', async (req, res) => {
   try {
     const b = req.body ?? {};
     const hostName = String(b.hostName ?? DEFAULT_PROPS.hostName);
-    const guestName = String(b.guestName ?? DEFAULT_PROPS.guestName);
+    const participants = Array.isArray(b.participants) && b.participants.length
+      ? b.participants.map((p: {name?: string; role?: string; avatar?: string}) => ({
+          name: String(p.name ?? 'Guest'),
+          role: String(p.role ?? 'Booker'),
+          avatar: String(p.avatar ?? ''),
+        }))
+      : DEFAULT_PROPS.participants;
     const props: ChatProps = {
       ...DEFAULT_PROPS,
-      items: parseScript(String(b.script ?? ''), {hostName, guestName}),
+      items: parseScript(String(b.script ?? ''), {hostName, participants}),
       hostName,
-      guestName,
-      hostAvatar: String(b.hostAvatar ?? ''),
-      guestAvatar: String(b.guestAvatar ?? ''),
-      headerSubtitle: String(b.headerSubtitle ?? DEFAULT_PROPS.headerSubtitle),
-      youSide: b.youSide === 'host' ? 'host' : 'guest',
+      hostRole: String(b.hostRole ?? DEFAULT_PROPS.hostRole),
+      hostAvatar: String(b.hostAvatar ?? DEFAULT_PROPS.hostAvatar),
+      participants,
+      headerDate: String(b.headerDate ?? DEFAULT_PROPS.headerDate),
+      headerApt: String(b.headerApt ?? DEFAULT_PROPS.headerApt),
       typingFor: ['host', 'guest', 'both', 'none'].includes(b.typingFor) ? b.typingFor : 'guest',
       keyboard: b.keyboard !== false,
       speed: Math.max(0.3, Math.min(3, Number(b.speed) || 1)),

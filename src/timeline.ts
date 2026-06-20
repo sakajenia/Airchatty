@@ -10,7 +10,7 @@ export type Keystroke = {
 export type MessageSeg = {
   kind: 'message';
   index: number;
-  sender: 'host' | 'guest';
+  sender: string;
   text: string;
   reaction?: string;
   isYou: boolean;
@@ -142,16 +142,15 @@ export const buildTimeline = (
   opts: {
     fps: number;
     speed: number;
-    youSide: 'guest' | 'host';
     typingFor: 'host' | 'guest' | 'both' | 'none';
     keyboard?: boolean;
   },
 ): Timeline => {
-  const {fps, speed, youSide, typingFor, keyboard = false} = opts;
+  const {fps, speed, typingFor, keyboard = false} = opts;
   const sec = (s: number) => s * fps * speed;
   const charDur = Math.max(2, Math.round(3.4 / speed));
 
-  const senderAt = (i: number): 'host' | 'guest' | null =>
+  const senderAt = (i: number): string | null =>
     items[i] && items[i].type === 'message'
       ? (items[i] as Extract<ChatItem, {type: 'message'}>).sender
       : null;
@@ -173,8 +172,8 @@ export const buildTimeline = (
       return;
     }
 
-    const isYou = item.sender === youSide;
     const isHost = item.sender === 'host';
+    const isYou = isHost;
     const chars = item.text.length;
     const isFirstOfGroup = senderAt(index - 1) !== item.sender;
     const isLastOfGroup = senderAt(index + 1) !== item.sender;
