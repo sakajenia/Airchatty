@@ -10,11 +10,24 @@ import {theme} from '../util';
  */
 export const Composer: React.FC<{
   text: string;
-  active: boolean; // host is currently typing (show caret)
   sendActive: boolean;
-}> = ({text, active, sendActive}) => {
+}> = ({text, sendActive}) => {
   const frame = useCurrentFrame();
-  const caretOn = active && Math.floor(frame / 16) % 2 === 0;
+  // The field is always focused while the keyboard is up, so the caret blinks
+  // even when empty (at the start, before the placeholder) — like the app.
+  const caretOn = Math.floor(frame / 16) % 2 === 0;
+  const caret = (
+    <span
+      style={{
+        display: 'inline-block',
+        width: 4,
+        height: 52,
+        background: theme.ink,
+        transform: 'translateY(10px)',
+        opacity: caretOn ? 1 : 0,
+      }}
+    />
+  );
 
   return (
     <div
@@ -35,46 +48,39 @@ export const Composer: React.FC<{
           background: theme.white,
         }}
       >
-        <div style={{fontSize: 44, lineHeight: 1.35, color: text ? theme.ink : theme.mute, minHeight: 56}}>
+        <div style={{fontSize: 44, lineHeight: 1.35, color: theme.ink, minHeight: 56}}>
           {text ? (
             <span>
               {text}
-              <span
-                style={{
-                  display: 'inline-block',
-                  width: 4,
-                  height: 50,
-                  marginLeft: 2,
-                  background: theme.ink,
-                  transform: 'translateY(8px)',
-                  opacity: caretOn ? 1 : 0,
-                }}
-              />
+              {caret}
             </span>
           ) : (
-            'Write a message…'
+            <span>
+              {caret}
+              <span style={{color: theme.mute}}>Write a message…</span>
+            </span>
           )}
         </div>
 
         <div style={{display: 'flex', alignItems: 'center', marginTop: 20}}>
           <div
             style={{
-              width: 90,
-              height: 90,
+              width: 86,
+              height: 86,
               borderRadius: '50%',
               background: theme.softCloud,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              marginRight: 32,
+              marginRight: 40,
             }}
           >
-            <svg width="46" height="46" viewBox="0 0 24 24" stroke={theme.ink} strokeWidth="2.2" strokeLinecap="round">
+            <svg width="44" height="44" viewBox="0 0 24 24" stroke={theme.ink} strokeWidth="2.2" strokeLinecap="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
           </div>
           {/* quick-replies: two overlapping speech bubbles */}
-          <svg width="68" height="68" viewBox="0 0 24 24" fill="none" stroke={theme.ink} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke={theme.ink} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M11 4.5h7.5A1.7 1.7 0 0 1 20.2 6.2V11.5" />
             <path d="M4.6 7.5h8.8A1.7 1.7 0 0 1 15.1 9.2v4.6a1.7 1.7 0 0 1-1.7 1.7H8l-2.6 2.2v-2.2h-.8A1.7 1.7 0 0 1 2.9 13.8V9.2A1.7 1.7 0 0 1 4.6 7.5z" />
             <path d="M5.8 11h6.4M5.8 13.2h4.2" />
@@ -84,8 +90,8 @@ export const Composer: React.FC<{
 
           <div
             style={{
-              width: 90,
-              height: 90,
+              width: 86,
+              height: 86,
               borderRadius: '50%',
               background: sendActive ? theme.ink : theme.softCloud,
               border: sendActive ? 'none' : `1px solid ${theme.hairline}`,
@@ -94,7 +100,7 @@ export const Composer: React.FC<{
               justifyContent: 'center',
             }}
           >
-            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke={sendActive ? '#fff' : theme.mute} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke={sendActive ? '#fff' : theme.mute} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 19V5M5 12l7-7 7 7" />
             </svg>
           </div>

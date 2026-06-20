@@ -31,33 +31,31 @@ const ReactionBadge: React.FC<{emoji: string; isYou: boolean; revealFrame: numbe
     fps,
     config: {damping: 12, mass: 0.6},
   });
+  // Sits in the bubble's bottom corner (right for the other person, left for
+  // you), in a light-grey circle — exactly like the Airbnb reference.
   return (
-    <div
-      style={{
-        alignSelf: isYou ? 'flex-start' : 'flex-end',
-        marginTop: -30,
-        marginLeft: isYou ? 28 : 0,
-        marginRight: isYou ? 0 : 28,
-        zIndex: 3,
-        transform: `scale(${pop})`,
-        opacity: pop,
-      }}
-    >
+    <div style={{display: 'flex', justifyContent: isYou ? 'flex-start' : 'flex-end', marginTop: -28, zIndex: 3}}>
       <div
         style={{
-          width: 58,
-          height: 58,
-          borderRadius: '50%',
-          background: theme.white,
-          border: `1px solid ${theme.hairline}`,
-          boxShadow: 'rgba(0,0,0,0.12) 0 4px 12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 32,
+          transform: `translateX(${isYou ? -14 : 14}px) scale(${pop})`,
+          opacity: pop,
         }}
       >
-        {emoji}
+        <div
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            background: '#f0f0f0',
+            boxShadow: '0 1px 6px rgba(0,0,0,0.10)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 42,
+          }}
+        >
+          {emoji}
+        </div>
       </div>
     </div>
   );
@@ -121,8 +119,11 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
             {` · ${senderRole}  ${timeLabel}`}
           </div>
         ))}
-      {bubble}
-      {reaction && <ReactionBadge emoji={reaction} isYou={isYou} revealFrame={revealFrame} />}
+      {/* wrapper shrinks to the bubble so the reaction hugs its corner */}
+      <div style={{maxWidth: 740}}>
+        {bubble}
+        {reaction && <ReactionBadge emoji={reaction} isYou={isYou} revealFrame={revealFrame} />}
+      </div>
       {readReceipt && (
         <div style={{fontSize: 22, color: theme.ash, margin: '8px 8px 0 0', fontWeight: 500}}>
           {readReceipt}

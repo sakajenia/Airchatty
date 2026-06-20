@@ -135,7 +135,7 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
 
       {keyboard && (
         <div ref={overlayRef} style={{position: 'absolute', left: 0, right: 0, bottom: 0}}>
-          <Composer text={composerText} active={!!composerText} sendActive={sendActive} />
+          <Composer text={composerText} sendActive={sendActive} />
           <Keyboard pressedKey={pressedKey} suggestions={suggestionsFor(composerText)} />
         </div>
       )}
