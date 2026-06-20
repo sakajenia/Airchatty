@@ -38,6 +38,8 @@ export const chatPropsSchema = z.object({
   guestRole: z.string(),
   guestAvatar: z.string(),
   youSide: z.enum(['guest', 'host']),
+  // Which speaker shows the "…" typing animation before their messages.
+  typingFor: z.enum(['host', 'guest', 'both', 'none']),
   // Centered header subtitle, e.g. "15–17 Jun · Casa Lisboa".
   headerSubtitle: z.string(),
   speed: z.number().min(0.3).max(3),
@@ -69,6 +71,7 @@ export const DEFAULT_PROPS: ChatProps = {
   guestAvatar: '',
   // Host is "you": dark bubbles on the right. Guest is light grey on the left.
   youSide: 'host',
+  typingFor: 'host',
   headerSubtitle: '15–17 Jun · Casa Lisboa',
   speed: 1,
   sound: true,

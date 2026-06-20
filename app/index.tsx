@@ -34,6 +34,7 @@ const App: React.FC = () => {
   const [guestAvatar, setGuestAvatar] = useState('');
   const [headerSubtitle, setHeaderSubtitle] = useState(DEFAULT_PROPS.headerSubtitle);
   const [youSide, setYouSide] = useState<'guest' | 'host'>('host');
+  const [typingFor, setTypingFor] = useState<'host' | 'guest' | 'both' | 'none'>('host');
   const [speed, setSpeed] = useState(1);
   const [sound, setSound] = useState(true);
   const [rendering, setRendering] = useState(false);
@@ -49,15 +50,16 @@ const App: React.FC = () => {
       guestAvatar,
       headerSubtitle,
       youSide,
+      typingFor,
       speed,
       sound,
     }),
-    [script, hostName, guestName, hostAvatar, guestAvatar, headerSubtitle, youSide, speed, sound],
+    [script, hostName, guestName, hostAvatar, guestAvatar, headerSubtitle, youSide, typingFor, speed, sound],
   );
 
   const durationInFrames = useMemo(
-    () => buildTimeline(inputProps.items, {fps: FPS, speed, youSide}).durationInFrames,
-    [inputProps.items, speed, youSide],
+    () => buildTimeline(inputProps.items, {fps: FPS, speed, youSide, typingFor}).durationInFrames,
+    [inputProps.items, speed, youSide, typingFor],
   );
 
   const download = async () => {
@@ -75,6 +77,7 @@ const App: React.FC = () => {
           guestAvatar,
           headerSubtitle,
           youSide,
+          typingFor,
           speed,
           sound,
         }),
@@ -145,6 +148,15 @@ const App: React.FC = () => {
               <select style={field} value={youSide} onChange={(e) => setYouSide(e.target.value as 'guest' | 'host')}>
                 <option value="host">Host (light grey = guest)</option>
                 <option value="guest">Guest (light grey = host)</option>
+              </select>
+            </div>
+            <div>
+              <label style={label}>Show typing "…" before</label>
+              <select style={field} value={typingFor} onChange={(e) => setTypingFor(e.target.value as typeof typingFor)}>
+                <option value="host">Host's messages</option>
+                <option value="guest">Guest's messages</option>
+                <option value="both">Both</option>
+                <option value="none">No typing</option>
               </select>
             </div>
             <div>

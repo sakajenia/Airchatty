@@ -41,10 +41,17 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
  */
 export const buildTimeline = (
   items: ChatItem[],
-  opts: {fps: number; speed: number; youSide: 'guest' | 'host'},
+  opts: {
+    fps: number;
+    speed: number;
+    youSide: 'guest' | 'host';
+    typingFor: 'host' | 'guest' | 'both' | 'none';
+  },
 ): Timeline => {
-  const {fps, speed, youSide} = opts;
+  const {fps, speed, youSide, typingFor} = opts;
   const sec = (s: number) => s * fps * speed;
+  const showsTyping = (sender: 'host' | 'guest') =>
+    typingFor === 'both' || typingFor === sender;
 
   // Precompute grouping: a message is grouped with the previous if it shares
   // the same sender and isn't separated by a date divider.
@@ -74,12 +81,13 @@ export const buildTimeline = (
     const isLastOfGroup = senderAt(index + 1) !== item.sender;
 
     let typingStartFrame: number | null = null;
-    if (isYou) {
-      frame += sec(clamp(0.35 + chars * 0.012, 0.35, 1.1));
-    } else {
+    if (showsTyping(item.sender)) {
       frame += sec(isFirstOfGroup ? 0.25 : 0.12);
       typingStartFrame = Math.round(frame);
       frame += sec(clamp(0.6 + chars * 0.02, 0.7, 2.3));
+    } else {
+      // No typing bubble — just a short composing beat before the message.
+      frame += sec(clamp(0.35 + chars * 0.012, 0.35, 1.1));
     }
 
     const revealFrame = Math.round(frame);

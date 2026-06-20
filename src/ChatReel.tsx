@@ -17,10 +17,10 @@ import {TypingIndicator} from './components/TypingIndicator';
 import {DateSeparator} from './components/DateSeparator';
 
 export const ChatReel: React.FC<ChatProps> = (props) => {
-  const {items, youSide, headerSubtitle, speed, sound} = props;
+  const {items, youSide, typingFor, headerSubtitle, speed, sound} = props;
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
-  const {segments} = buildTimeline(items, {fps, speed, youSide});
+  const {segments} = buildTimeline(items, {fps, speed, youSide, typingFor});
 
   // The header describes the OTHER person (the one you're chatting with).
   const otherSide = youSide === 'guest' ? 'host' : 'guest';
@@ -90,6 +90,7 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
               startFrame={typing.typingStartFrame}
               senderName={typingPerson.name}
               avatarSrc={typingPerson.avatar}
+              isYou={typing.isYou}
             />
           )}
           </div>
