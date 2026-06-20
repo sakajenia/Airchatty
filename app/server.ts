@@ -71,7 +71,9 @@ app.post('/render', async (req, res) => {
       : DEFAULT_PROPS.participants;
     const props: ChatProps = {
       ...DEFAULT_PROPS,
-      items: parseScript(String(b.script ?? ''), {hostName, participants}),
+      items: Array.isArray(b.items) && b.items.length
+        ? b.items
+        : parseScript(String(b.script ?? ''), {hostName, participants}),
       hostName,
       hostRole: String(b.hostRole ?? DEFAULT_PROPS.hostRole),
       hostAvatar: String(b.hostAvatar ?? DEFAULT_PROPS.hostAvatar),

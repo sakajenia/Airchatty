@@ -79,18 +79,22 @@ export type HeaderAvatar = {name: string; src: string};
 // floating circles — none of them touch. A photo sits lower-left, a second is
 // up-and-right of it (with a clear gap), and a letter avatar floats bottom-right.
 const CLUSTERS: Record<number, {size: number; x: number; y: number}[]> = {
-  1: [{size: 94, x: 42, y: 14}],
+  1: [{size: 94, x: 0, y: 14}],
   2: [{size: 88, x: 0, y: 20}, {size: 80, x: 96, y: 0}],
   3: [{size: 86, x: 0, y: 24}, {size: 78, x: 94, y: 0}, {size: 46, x: 118, y: 86}],
   4: [{size: 86, x: 0, y: 24}, {size: 78, x: 94, y: 0}, {size: 46, x: 118, y: 86}, {size: 46, x: 50, y: 90}],
+  5: [{size: 78, x: 0, y: 26}, {size: 72, x: 86, y: 0}, {size: 46, x: 150, y: 56}, {size: 44, x: 38, y: 86}, {size: 42, x: 104, y: 92}],
+  6: [{size: 74, x: 0, y: 24}, {size: 68, x: 80, y: 0}, {size: 50, x: 148, y: 34}, {size: 42, x: 30, y: 80}, {size: 42, x: 92, y: 90}, {size: 40, x: 152, y: 98}],
 };
 
 const AvatarCluster: React.FC<{participants: HeaderAvatar[]}> = ({participants}) => {
   const sorted = [...participants].sort((a, b) => (a.src ? 0 : 1) - (b.src ? 0 : 1));
-  const n = Math.min(Math.max(sorted.length, 1), 4);
+  const n = Math.min(Math.max(sorted.length, 1), 6);
   const spec = CLUSTERS[n];
+  const w = Math.max(...spec.map((s) => s.x + s.size));
+  const h = Math.max(...spec.map((s) => s.y + s.size));
   return (
-    <div style={{position: 'relative', width: 178, height: 140}}>
+    <div style={{position: 'relative', width: w, height: h}}>
       {sorted.slice(0, 4).map((p, i) => {
         const s = spec[i] ?? spec[spec.length - 1];
         return (
