@@ -67,7 +67,8 @@ export const DEFAULT_PROPS: ChatProps = {
   guestName: 'Maria',
   guestRole: 'Booker',
   guestAvatar: '',
-  youSide: 'guest',
+  // Host is "you": dark bubbles on the right. Guest is light grey on the left.
+  youSide: 'host',
   headerSubtitle: '15–17 Jun · Casa Lisboa',
   speed: 1,
   sound: true,

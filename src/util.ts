@@ -48,6 +48,23 @@ export const useNaturalHeight = () => {
   return [ref, height] as const;
 };
 
+/**
+ * Measure an element's visible (client) height. Re-runs every render so it
+ * stays correct, but the value is stable for a fixed-size container. Used to
+ * know the chat viewport height for top-anchored auto-scroll.
+ */
+export const useClientHeight = () => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const next = el.clientHeight;
+    if (next && next !== height) setHeight(next);
+  });
+  return [ref, height] as const;
+};
+
 /** Initials for the fallback avatar, e.g. "Sofia Martins" -> "SM". */
 export const initialsFromName = (name: string) => {
   const words = name.replace(/[·|–-].*$/, '').trim().split(/\s+/).filter(Boolean);

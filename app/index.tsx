@@ -33,7 +33,7 @@ const App: React.FC = () => {
   const [hostAvatar, setHostAvatar] = useState('');
   const [guestAvatar, setGuestAvatar] = useState('');
   const [headerSubtitle, setHeaderSubtitle] = useState(DEFAULT_PROPS.headerSubtitle);
-  const [youSide, setYouSide] = useState<'guest' | 'host'>('guest');
+  const [youSide, setYouSide] = useState<'guest' | 'host'>('host');
   const [speed, setSpeed] = useState(1);
   const [sound, setSound] = useState(true);
   const [rendering, setRendering] = useState(false);
@@ -141,10 +141,10 @@ const App: React.FC = () => {
               <input style={field} value={headerSubtitle} onChange={(e) => setHeaderSubtitle(e.target.value)} />
             </div>
             <div>
-              <label style={label}>"You" are the…</label>
+              <label style={label}>Dark bubbles (right side) =</label>
               <select style={field} value={youSide} onChange={(e) => setYouSide(e.target.value as 'guest' | 'host')}>
-                <option value="guest">Guest / tourist (dark, right)</option>
-                <option value="host">Host (dark, right)</option>
+                <option value="host">Host (light grey = guest)</option>
+                <option value="guest">Guest (light grey = host)</option>
               </select>
             </div>
             <div>
