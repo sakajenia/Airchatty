@@ -4,11 +4,49 @@ Turn a written conversation into a vertical **Airbnb-style chat reel** (MP4) —
 messages pop in one at a time, with typing "…" bubbles, a host header, timestamps,
 read receipts, and sound. Built with [Remotion](https://www.remotion.dev).
 
-## Quick start (the easy way)
+---
+
+## 🇮🇹 Come usarlo sul TUO computer (passo-passo)
+
+Airchatty è un'app che gira **in locale sul tuo computer**. Non c'è un sito online:
+apri l'app sul tuo Mac/PC e si apre nel browser all'indirizzo `http://localhost:3000`.
+
+> ⚠️ `localhost` vuol dire "questo computer". Funziona **solo** sul computer dove
+> avvii l'app — non è un sito su internet che puoi aprire dal telefono.
+
+**1. Installa Node.js** (una volta sola) da <https://nodejs.org> → scarica la versione **LTS**.
+
+**2. Scarica il progetto.** Apri il **Terminale** (Mac) o **Prompt dei comandi** (Windows) e incolla:
 
 ```bash
+git clone -b claude/chat-video-generator-q0hpru https://github.com/sakajenia/airchatty.git
+cd airchatty
+```
+
+**3. Avvia l'app** (sempre nel Terminale):
+
+```bash
+npm install        # solo la prima volta — installa tutto (1–2 min)
+npm start          # avvia l'app
+```
+
+**4. Apri il browser** (Chrome/Safari) e vai su:
+
+```
+http://localhost:3000
+```
+
+Vedrai l'interfaccia: scrivi i messaggi → guarda l'anteprima a destra → premi
+**⬇ Scarica MP4**. Per chiudere l'app: torna nel Terminale e premi `Ctrl + C`.
+
+---
+
+## Quick start (short version)
+
+```bash
+git clone -b claude/chat-video-generator-q0hpru https://github.com/sakajenia/airchatty.git
+cd airchatty
 npm install
-npm run make-assets   # one-time: creates the pop sound + music
 npm start             # opens the app at http://localhost:3000
 ```
 
