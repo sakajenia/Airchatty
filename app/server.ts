@@ -72,7 +72,8 @@ app.post('/render', async (req, res) => {
       guestAvatar: String(b.guestAvatar ?? ''),
       headerSubtitle: String(b.headerSubtitle ?? DEFAULT_PROPS.headerSubtitle),
       youSide: b.youSide === 'host' ? 'host' : 'guest',
-      typingFor: ['host', 'guest', 'both', 'none'].includes(b.typingFor) ? b.typingFor : 'host',
+      typingFor: ['host', 'guest', 'both', 'none'].includes(b.typingFor) ? b.typingFor : 'guest',
+      keyboard: b.keyboard !== false,
       speed: Math.max(0.3, Math.min(3, Number(b.speed) || 1)),
       sound: Boolean(b.sound),
     };

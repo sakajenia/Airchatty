@@ -40,6 +40,9 @@ export const chatPropsSchema = z.object({
   youSide: z.enum(['guest', 'host']),
   // Which speaker shows the "…" typing animation before their messages.
   typingFor: z.enum(['host', 'guest', 'both', 'none']),
+  // Screen-recording mode: show the iPhone keyboard and have the host type
+  // each message key-by-key (with press previews) before sending it.
+  keyboard: z.boolean(),
   // Centered header subtitle, e.g. "15–17 Jun · Casa Lisboa".
   headerSubtitle: z.string(),
   speed: z.number().min(0.3).max(3),
@@ -74,6 +77,8 @@ export const DEFAULT_PROPS: ChatProps = {
   // Typing "…" shows for the OTHER person (the guest, on the left in grey),
   // exactly like the real Airbnb chat.
   typingFor: 'guest',
+  // Screen-recording look: host types on the iPhone keyboard.
+  keyboard: true,
   headerSubtitle: '15–17 Jun · Casa Lisboa',
   speed: 1,
   sound: true,

@@ -8,10 +8,13 @@ export type MessageSeg = {
   reaction?: string;
   isYou: boolean;
   revealFrame: number;
-  /** Frame the typing "…" indicator appears (null for your own messages). */
+  /** Frame the grey "…" dots indicator appears (guest), else null. */
   typingStartFrame: number | null;
+  /** Keyboard-mode: frame the host starts typing this message, else null. */
+  keyboardStartFrame: number | null;
+  /** Frames per character while typing on the keyboard. */
+  charDur: number;
   timeLabel: string;
-  /** Grouping flags for avatar/label rendering. */
   isFirstOfGroup: boolean;
   isLastOfGroup: boolean;
 };
@@ -34,10 +37,12 @@ export type Timeline = {
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 /**
- * Convert chat items into a frame-accurate timeline that mimics a real
- * conversation: the OTHER person's messages are preceded by typing "…" dots
- * (length scales with the message), your OWN messages appear after a short
- * composing beat, and there's a read pause after each.
+ * Convert chat items into a frame-accurate timeline.
+ *
+ * Keyboard (screen-recording) mode: the host types each message key-by-key on
+ * the iPhone keyboard, then sends it (the bubble appears at `revealFrame`). The
+ * guest is preceded by the grey "…" dots. Without keyboard mode it falls back
+ * to the simpler dots/instant behaviour driven by `typingFor`.
  */
 export const buildTimeline = (
   items: ChatItem[],
@@ -46,17 +51,17 @@ export const buildTimeline = (
     speed: number;
     youSide: 'guest' | 'host';
     typingFor: 'host' | 'guest' | 'both' | 'none';
+    keyboard?: boolean;
   },
 ): Timeline => {
-  const {fps, speed, youSide, typingFor} = opts;
+  const {fps, speed, youSide, typingFor, keyboard = false} = opts;
   const sec = (s: number) => s * fps * speed;
-  const showsTyping = (sender: 'host' | 'guest') =>
-    typingFor === 'both' || typingFor === sender;
+  const charDur = Math.max(2, Math.round(3.4 / speed));
 
-  // Precompute grouping: a message is grouped with the previous if it shares
-  // the same sender and isn't separated by a date divider.
   const senderAt = (i: number): 'host' | 'guest' | null =>
-    items[i] && items[i].type === 'message' ? (items[i] as Extract<ChatItem, {type: 'message'}>).sender : null;
+    items[i] && items[i].type === 'message'
+      ? (items[i] as Extract<ChatItem, {type: 'message'}>).sender
+      : null;
 
   const segments: Seg[] = [];
   let frame = sec(0.4);
@@ -76,17 +81,26 @@ export const buildTimeline = (
     }
 
     const isYou = item.sender === youSide;
+    const isHost = item.sender === 'host';
     const chars = item.text.length;
     const isFirstOfGroup = senderAt(index - 1) !== item.sender;
     const isLastOfGroup = senderAt(index + 1) !== item.sender;
 
     let typingStartFrame: number | null = null;
-    if (showsTyping(item.sender)) {
+    let keyboardStartFrame: number | null = null;
+
+    if (keyboard && isHost) {
+      // Host types the message out on the keyboard, then sends.
+      frame += sec(isFirstOfGroup ? 0.45 : 0.2);
+      keyboardStartFrame = Math.round(frame);
+      frame += chars * charDur; // already in frames
+      frame += sec(0.5); // brief pause on the finished text before sending
+    } else if (keyboard ? !isHost : typingFor === 'both' || typingFor === item.sender) {
+      // Grey "…" dots (the other person).
       frame += sec(isFirstOfGroup ? 0.25 : 0.12);
       typingStartFrame = Math.round(frame);
       frame += sec(clamp(0.6 + chars * 0.02, 0.7, 2.3));
     } else {
-      // No typing bubble — just a short composing beat before the message.
       frame += sec(clamp(0.35 + chars * 0.012, 0.35, 1.1));
     }
 
@@ -101,13 +115,14 @@ export const buildTimeline = (
       isYou,
       revealFrame,
       typingStartFrame,
+      keyboardStartFrame,
+      charDur,
       timeLabel: fmt(clock),
       isFirstOfGroup,
       isLastOfGroup,
     });
 
-    // Read pause (longer for longer messages, extra if a reaction lands).
-    frame += sec(clamp(0.85 + chars * 0.03, 1.0, 3.2) + (item.reaction ? 0.9 : 0));
+    frame += sec(clamp(0.85 + chars * 0.03, 1.0, 3.0) + (item.reaction ? 0.9 : 0));
   });
 
   const durationInFrames = Math.max(Math.round(frame + sec(1.2)), fps);

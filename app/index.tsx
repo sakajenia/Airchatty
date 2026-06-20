@@ -35,6 +35,7 @@ const App: React.FC = () => {
   const [headerSubtitle, setHeaderSubtitle] = useState(DEFAULT_PROPS.headerSubtitle);
   const [youSide, setYouSide] = useState<'guest' | 'host'>('host');
   const [typingFor, setTypingFor] = useState<'host' | 'guest' | 'both' | 'none'>('guest');
+  const [keyboard, setKeyboard] = useState(true);
   const [speed, setSpeed] = useState(1);
   const [sound, setSound] = useState(true);
   const [rendering, setRendering] = useState(false);
@@ -51,15 +52,16 @@ const App: React.FC = () => {
       headerSubtitle,
       youSide,
       typingFor,
+      keyboard,
       speed,
       sound,
     }),
-    [script, hostName, guestName, hostAvatar, guestAvatar, headerSubtitle, youSide, typingFor, speed, sound],
+    [script, hostName, guestName, hostAvatar, guestAvatar, headerSubtitle, youSide, typingFor, keyboard, speed, sound],
   );
 
   const durationInFrames = useMemo(
-    () => buildTimeline(inputProps.items, {fps: FPS, speed, youSide, typingFor}).durationInFrames,
-    [inputProps.items, speed, youSide, typingFor],
+    () => buildTimeline(inputProps.items, {fps: FPS, speed, youSide, typingFor, keyboard}).durationInFrames,
+    [inputProps.items, speed, youSide, typingFor, keyboard],
   );
 
   const download = async () => {
@@ -78,6 +80,7 @@ const App: React.FC = () => {
           headerSubtitle,
           youSide,
           typingFor,
+          keyboard,
           speed,
           sound,
         }),
@@ -165,7 +168,11 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <label style={{display: 'flex', alignItems: 'center', gap: 8, margin: '18px 0', fontSize: 14}}>
+          <label style={{display: 'flex', alignItems: 'center', gap: 8, margin: '18px 0 8px', fontSize: 14}}>
+            <input type="checkbox" checked={keyboard} onChange={(e) => setKeyboard(e.target.checked)} />
+            Screen-recording look (host types on the iPhone keyboard)
+          </label>
+          <label style={{display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 18px', fontSize: 14}}>
             <input type="checkbox" checked={sound} onChange={(e) => setSound(e.target.checked)} />
             Message pop sounds + soft background music
           </label>

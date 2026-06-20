@@ -34,6 +34,7 @@ export const RemotionRoot: React.FC = () => {
           speed: props.speed,
           youSide: props.youSide,
           typingFor: props.typingFor,
+          keyboard: props.keyboard,
         });
         return {durationInFrames, fps: FPS, width: WIDTH, height: HEIGHT};
       }}

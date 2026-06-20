@@ -14,6 +14,7 @@ export type ChatBubbleProps = {
   avatarSrc: string;
   isFirstOfGroup: boolean;
   isLastOfGroup: boolean;
+  readReceipt?: string;
 };
 
 const AVATAR = 56;
@@ -73,6 +74,7 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
   avatarSrc,
   isFirstOfGroup,
   isLastOfGroup,
+  readReceipt,
 }) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
@@ -121,6 +123,11 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
         ))}
       {bubble}
       {reaction && <ReactionBadge emoji={reaction} isYou={isYou} revealFrame={revealFrame} />}
+      {readReceipt && (
+        <div style={{fontSize: 22, color: theme.ash, margin: '8px 8px 0 0', fontWeight: 500}}>
+          {readReceipt}
+        </div>
+      )}
     </div>
   );
 
