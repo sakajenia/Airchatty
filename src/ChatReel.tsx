@@ -133,29 +133,35 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
         </div>
       )}
 
-      {/* Audio: only the keyboard — a click per character, a duller tock per
-          delete — exactly like typing on an iPhone. Nothing else. */}
+      {/* Audio: the keyboard only — the iPhone "type" click on letters, and the
+          iPhone "erase" sound on delete, space and shift (the modifier sound) —
+          plus the Airbnb "message sent" sound when the host sends. */}
       {sound &&
         keyboard &&
-        segments.flatMap((s) =>
-          s.kind === 'message' && s.keystrokes && s.keyboardStartFrame != null
-            ? s.keystrokes.map((k, i) => {
-                const at = (s.keyboardStartFrame as number) + i * s.charDur;
-                return (
-                  <Sequence
-                    key={`k-${s.index}-${i}`}
-                    from={at}
-                    durationInFrames={Math.ceil(fps * 0.12)}
-                  >
-                    <Audio
-                      src={staticFile(k.kind === 'delete' ? 'keydelete.wav' : 'keytype.wav')}
-                      volume={0.7}
-                    />
-                  </Sequence>
-                );
-              })
-            : [],
-        )}
+        segments.flatMap((s) => {
+          if (s.kind !== 'message') return [];
+          const audios: React.ReactNode[] = [];
+          if (s.keystrokes && s.keyboardStartFrame != null) {
+            for (let i = 0; i < s.keystrokes.length; i++) {
+              const k = s.keystrokes[i];
+              const erase = k.kind === 'delete' || k.kind === 'shift' || k.char === ' ';
+              audios.push(
+                <Sequence key={`k-${s.index}-${i}`} from={s.keyboardStartFrame + k.at} durationInFrames={Math.ceil(fps * 0.12)}>
+                  <Audio src={staticFile(erase ? 'keydelete.wav' : 'keytype.wav')} volume={0.7} />
+                </Sequence>,
+              );
+            }
+          }
+          // "message sent" sound when the host's message lands
+          if (s.sender === 'host') {
+            audios.push(
+              <Sequence key={`sent-${s.index}`} from={s.revealFrame} durationInFrames={Math.ceil(fps * 0.8)}>
+                <Audio src={staticFile('sent.wav')} volume={0.55} />
+              </Sequence>,
+            );
+          }
+          return audios;
+        })}
     </AbsoluteFill>
   );
 };

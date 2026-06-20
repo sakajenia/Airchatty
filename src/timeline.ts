@@ -1,6 +1,11 @@
 import {ChatItem} from './schema';
 
-export type Keystroke = {kind: 'type' | 'delete'; char?: string};
+export type Keystroke = {
+  kind: 'type' | 'delete' | 'shift';
+  char?: string;
+  /** Start frame relative to keyboardStartFrame. */
+  at: number;
+};
 
 export type MessageSeg = {
   kind: 'message';
@@ -41,28 +46,57 @@ export type Timeline = {
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 /**
- * Build the keystroke plan for a message: mostly straight typing, but every so
- * often a deterministic "typo" — a wrong letter typed then backspaced — so the
- * delete sound is used and the typing feels human. The net result equals `text`.
+ * Build the keystroke plan for a message with human, non-linear rhythm:
+ * per-key jitter, short "thinking" pauses at word/sentence boundaries, an
+ * occasional typo+backspace, and a shift press before non-auto-capitalised
+ * capitals. Each keystroke carries its start frame (`at`) relative to the
+ * start of typing. Returns the keystrokes and total typing duration in frames.
+ * The net typed text equals `text`.
  */
-const buildKeystrokes = (text: string): Keystroke[] => {
-  const ks: Keystroke[] = [];
+const buildKeystrokes = (text: string, charDur: number): {keystrokes: Keystroke[]; total: number} => {
   let seed = 7;
   for (let i = 0; i < text.length; i++) seed = (seed * 31 + text.charCodeAt(i)) >>> 0;
   const rand = () => {
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;
     return seed / 0x7fffffff;
   };
+  const jitter = (base: number, amt: number) => base * (1 - amt + rand() * amt * 2);
   const keys = 'qwertyuiopasdfghjklzxcvbnm';
+  const isSentenceEnd = (ch: string) => ch === '.' || ch === '!' || ch === '?';
+
+  const ks: Keystroke[] = [];
+  let at = 0;
+  const push = (k: Omit<Keystroke, 'at'>, durAfter: number) => {
+    ks.push({...k, at: Math.round(at)});
+    at += durAfter;
+  };
+
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
+
+    // occasional typo: a wrong letter typed then backspaced
     if (i >= 3 && /[a-zA-Z]/.test(c) && rand() < 0.05) {
-      ks.push({kind: 'type', char: keys[Math.floor(rand() * keys.length)]});
-      ks.push({kind: 'delete'});
+      push({kind: 'type', char: keys[Math.floor(rand() * keys.length)]}, jitter(charDur, 0.3));
+      push({kind: 'delete'}, jitter(charDur * 0.85, 0.3));
     }
-    ks.push({kind: 'type', char: c});
+
+    // shift press before a capital that iOS wouldn't auto-capitalise
+    if (/[A-Z]/.test(c)) {
+      let auto = i === 0;
+      let j = i - 1;
+      while (j >= 0 && text[j] === ' ') j--;
+      if (j < 0 || isSentenceEnd(text[j])) auto = true;
+      if (!auto) push({kind: 'shift'}, jitter(charDur * 0.7, 0.3));
+    }
+
+    // the character itself, with a human gap after it
+    let durAfter = jitter(charDur, 0.4);
+    if (c === ' ' && rand() < 0.22) durAfter += charDur * (3 + rand() * 9); // mid-thought pause
+    if (isSentenceEnd(c)) durAfter += charDur * (4 + rand() * 7); // pause after a sentence
+    push({kind: 'type', char: c}, durAfter);
   }
-  return ks;
+
+  return {keystrokes: ks, total: Math.round(at)};
 };
 
 /** Composer text + currently-pressed character at a frame (host keyboard typing). */
@@ -72,20 +106,25 @@ export const composerStateAt = (
 ): {text: string; pressedChar: string | null} => {
   if (!seg.keystrokes || seg.keyboardStartFrame == null) return {text: '', pressedChar: null};
   const elapsed = frame - seg.keyboardStartFrame;
-  const total = seg.keystrokes.length;
-  const applied = Math.max(0, Math.min(Math.floor(elapsed / seg.charDur) + 1, total));
+  const ks = seg.keystrokes;
+  let applied = 0;
+  while (applied < ks.length && ks[applied].at <= elapsed) applied++;
   let buf = '';
   for (let i = 0; i < applied; i++) {
-    const k = seg.keystrokes[i];
+    const k = ks[i];
     if (k.kind === 'type') buf += k.char ?? '';
-    else buf = buf.slice(0, -1);
+    else if (k.kind === 'delete') buf = buf.slice(0, -1);
   }
   let pressedChar: string | null = null;
-  const curIdx = applied - 1;
-  if (curIdx >= 0 && curIdx < total) {
-    const localInSlot = elapsed - curIdx * seg.charDur;
-    const k = seg.keystrokes[curIdx];
-    if (k.kind === 'type' && localInSlot < seg.charDur * 0.62) pressedChar = k.char ?? null;
+  const cur = applied - 1;
+  if (cur >= 0) {
+    const k = ks[cur];
+    const next = ks[cur + 1];
+    const win = next ? next.at - k.at : seg.charDur;
+    const local = elapsed - k.at;
+    if (k.kind === 'type' && k.char && /\S/.test(k.char) && local < Math.min(win * 0.6, seg.charDur)) {
+      pressedChar = k.char;
+    }
   }
   return {text: buf, pressedChar};
 };
@@ -145,13 +184,14 @@ export const buildTimeline = (
     let keystrokes: Keystroke[] | null = null;
 
     if (keyboard && isHost) {
-      // Host types the message out on the keyboard (with occasional typos),
+      // Host types the message out on the keyboard (human rhythm + typos),
       // then sends.
-      keystrokes = buildKeystrokes(item.text);
-      frame += sec(isFirstOfGroup ? 0.45 : 0.2);
+      frame += sec(isFirstOfGroup ? 0.55 : 0.25); // pick the phone up / think
       keyboardStartFrame = Math.round(frame);
-      frame += keystrokes.length * charDur;
-      frame += sec(0.5); // brief pause on the finished text before sending
+      const plan = buildKeystrokes(item.text, charDur);
+      keystrokes = plan.keystrokes;
+      frame += plan.total;
+      frame += sec(0.55); // re-read the finished message before sending
     } else if (keyboard ? !isHost : typingFor === 'both' || typingFor === item.sender) {
       // Grey "…" dots (the other person).
       frame += sec(isFirstOfGroup ? 0.25 : 0.12);

@@ -73,6 +73,20 @@ const makeClick = (opts: {dur: number; freqs: number[]; decay: number; bright: n
 const keytype = makeClick({dur: 0.05, freqs: [1850, 2650], decay: 135, bright: 0.95});
 const keydelete = makeClick({dur: 0.06, freqs: [1050, 1500], decay: 100, bright: 0.6});
 
+// A gentle "message sent" pip (placeholder until the real Airbnb sound is in).
+const makeSent = (): number[] => {
+  const dur = 0.28;
+  const n = Math.floor(SAMPLE_RATE * dur);
+  const out: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const t = i / SAMPLE_RATE;
+    const env = Math.exp(-t * 16) * Math.min(1, t / 0.006);
+    const freq = 660 + 360 * (t / dur); // gentle upward swish
+    out.push(0.42 * env * (sine(freq, t) + 0.4 * sine(freq * 2, t)));
+  }
+  return out;
+};
+
 fs.mkdirSync(PUBLIC, {recursive: true});
 // Only write the synthesized fallbacks if real sounds aren't already in place,
 // so this never clobbers the trimmed iPhone recordings.
@@ -87,6 +101,7 @@ const write = (name: string, samples: number[]) => {
 };
 write('keytype.wav', keytype);
 write('keydelete.wav', keydelete);
+write('sent.wav', makeSent());
 // Remove the old sounds (no longer used).
 for (const f of ['pop.wav', 'music.wav']) {
   const p = path.join(PUBLIC, f);
