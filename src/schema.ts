@@ -71,7 +71,9 @@ export const DEFAULT_PROPS: ChatProps = {
   guestAvatar: '',
   // Host is "you": dark bubbles on the right. Guest is light grey on the left.
   youSide: 'host',
-  typingFor: 'host',
+  // Typing "…" shows for the OTHER person (the guest, on the left in grey),
+  // exactly like the real Airbnb chat.
+  typingFor: 'guest',
   headerSubtitle: '15–17 Jun · Casa Lisboa',
   speed: 1,
   sound: true,

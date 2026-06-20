@@ -34,7 +34,7 @@ const App: React.FC = () => {
   const [guestAvatar, setGuestAvatar] = useState('');
   const [headerSubtitle, setHeaderSubtitle] = useState(DEFAULT_PROPS.headerSubtitle);
   const [youSide, setYouSide] = useState<'guest' | 'host'>('host');
-  const [typingFor, setTypingFor] = useState<'host' | 'guest' | 'both' | 'none'>('host');
+  const [typingFor, setTypingFor] = useState<'host' | 'guest' | 'both' | 'none'>('guest');
   const [speed, setSpeed] = useState(1);
   const [sound, setSound] = useState(true);
   const [rendering, setRendering] = useState(false);
@@ -153,8 +153,8 @@ const App: React.FC = () => {
             <div>
               <label style={label}>Show typing "…" before</label>
               <select style={field} value={typingFor} onChange={(e) => setTypingFor(e.target.value as typeof typingFor)}>
-                <option value="host">Host's messages</option>
-                <option value="guest">Guest's messages</option>
+                <option value="guest">Guest / other person (like Airbnb)</option>
+                <option value="host">Host</option>
                 <option value="both">Both</option>
                 <option value="none">No typing</option>
               </select>
