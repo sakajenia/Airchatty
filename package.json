@@ -7,6 +7,7 @@
     "start": "ts-node app/server.ts",
     "dev": "remotion studio src/Root.tsx",
     "render": "remotion render src/Root.tsx ChatReel out/sample.mp4 --concurrency=2 --timeout=120000",
+    "batch": "ts-node scripts/batch.ts",
     "make-assets": "ts-node scripts/make-assets.ts"
   },
   "dependencies": {

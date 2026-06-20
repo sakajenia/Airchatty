@@ -6,6 +6,59 @@ read receipts, and sound. Built with [Remotion](https://www.remotion.dev).
 
 ---
 
+## 🎬 Modalità BATCH — tanti video da una sola tabella (consigliata)
+
+Vuoi scrivere **tutte** le conversazioni in una volta e ottenere **tutti i video
+pronti** in automatico? Questa è la strada. Una riga della tabella = un video.
+
+1. Apri il template **Google Sheet** (o copia `conversations.example.csv`).
+2. Compila una riga per ogni video.
+3. In Google Sheet: **File → Scarica → Valori separati da virgola (.csv)**.
+4. Dai il CSV a me (lo carichi qui) **oppure**, sul tuo computer:
+   ```bash
+   npm run batch -- conversations.csv
+   ```
+5. Trovi tutti gli MP4 nella cartella `out/`. 🎉
+
+### Le colonne della tabella
+
+| Colonna | Obbligatoria | Cosa scrivere |
+| --- | --- | --- |
+| `name` | no | Nome del file video (es. `luci`). Se vuoto → `video-1`, `video-2`… |
+| `guests` | no | Numero di ospiti nella chat, 2–6 (default 2). |
+| `host_name` | no | Il tuo nome come host (default Lorenzo). |
+| `conversation` | **sì** | La conversazione, **un messaggio per riga** (Alt+Invio nella cella). |
+
+> Nomi/foto degli ospiti, date e nome dell'appartamento sono **casuali e diversi
+> per ogni riga** — non li scrivi tu, li genera Airchatty.
+
+### Come si scrive la cella `conversation`
+
+Un messaggio per riga, con un'etichetta all'inizio:
+
+| Scrivi | Significato |
+| --- | --- |
+| `G: ...` | Messaggio dell'ospite #1 |
+| `G2: ...` | Messaggio dell'ospite #2 (`G3:`, `G4:`… fino al numero di ospiti) |
+| `HD: ...` | Il messaggio **ONESTO** dell'host: viene digitato e poi **cancellato** |
+| `H: ...` | Il messaggio cordiale dell'host che viene **inviato davvero** |
+| `+❤️` | Aggiunge una reazione al messaggio precedente |
+| `# Oggi` | Una riga separatore con la data |
+
+Una riga `HD:` si "attacca" alla riga `H:` successiva (prima digita l'onesto, lo
+cancella, poi scrive e invia il cordiale). Esempio di una cella:
+
+```
+G: Ciao! Scusa il disturbo 🙂
+G: Dove si accendono le luci??
+HD: Ma è possibile che tu non veda gli interruttori??
+H: Le luci sono di fianco alla porta, sulla destra 😊
+```
+
+Vedi `conversations.example.csv` per un esempio completo con 3 video.
+
+---
+
 ## 🇮🇹 Come usarlo sul TUO computer (passo-passo)
 
 Airchatty è un'app che gira **in locale sul tuo computer**. Non c'è un sito online:
