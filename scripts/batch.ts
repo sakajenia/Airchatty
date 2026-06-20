@@ -1,26 +1,29 @@
 /**
  * Airchatty — BATCH renderer.
  *
- * Reads a spreadsheet (CSV, e.g. exported from Google Sheets) where each row is
- * one video, and renders every row to out/<name>.mp4 automatically.
+ * Reads a spreadsheet (CSV, e.g. exported from Google Sheets) where each ROW is
+ * one video, and renders every row to out/<nome>.mp4 automatically.
  *
  *   npm run batch                      # reads ./conversations.csv
  *   npm run batch -- path/to/file.csv  # reads a specific file
  *
- * CSV columns (header row, any order — only `conversation` is required):
- *   name          short title used for the output file name (optional)
- *   guests        number of guests 2–6 (optional, default 2)
- *   host_name     your host display name (optional, default Lorenzo)
- *   conversation  the script — one message per line (see buildItems below)
+ * COLUMNS (header row, any order; Italian or English names accepted):
+ *   nome        output file name for the video (optional → video-1, video-2…)
+ *   ospiti      number of guests in the chat, 2–6 (optional, default 2)
+ *   host        your host display name (optional, default Lorenzo)
+ *   domanda     the guest message(s) BEFORE the host replies — one per line
+ *   onesto      the host's HONEST draft(s) — typed then deleted (optional)
+ *   cordiale    the host's cordial message(s) that get sent — one per line
+ *   risposta    the guest message(s) AFTER the host replies (optional)
  *
- * Inside the `conversation` cell, one message per line:
- *   G:  ...     a guest message (guest #1)
- *   G2: ...     a message from guest #2 (G3, G4… up to the guest count)
- *   HD: ...     the host's HONEST draft — typed then deleted (optional)
- *   H:  ...     the host's cordial message that actually gets sent
- *   +❤️         attaches a reaction to the previous message
- *   # Today     a centered date separator
- * An HD: line attaches its text as the draft of the next H: line.
+ * Inside a cell, put ONE MESSAGE PER LINE (Alt+Enter in Google Sheets, or use
+ * " | " as a separator). In the guest cells (domanda / risposta) start a line
+ * with "O2:" (or "O3:"…) to make a different guest speak — this is what makes
+ * the read receipt grow from "Read by X" to "Read by all". A bare "+❤️" line
+ * adds a reaction to the previous message.
+ *
+ * onesto ↔ cordiale are paired by line: the 1st honest draft attaches to the
+ * 1st cordial message (typed, deleted, then the polite one is sent), and so on.
  */
 import path from 'path';
 import fs from 'fs';
@@ -70,14 +73,29 @@ function parseCSV(text: string): string[][] {
   return rows.filter((r) => r.some((f) => f.trim() !== ''));
 }
 
-/** Turn one `conversation` cell into structured chat items. */
-function buildItems(cell: string, guestCount: number): ChatItem[] {
-  const items: ChatItem[] = [{type: 'separator', label: 'Today'}];
-  // Accept real newlines or " | " as line separators (Sheets-friendly).
-  const lines = (cell.includes('\n') ? cell.split(/\r?\n/) : cell.split('|'));
-  let pendingDraft: string | undefined;
-  let firstMessage = true;
+/** Split a cell into individual messages (newline- or "|"-separated). */
+const splitLines = (cell: string): string[] =>
+  (cell ?? '')
+    .split(cell?.includes('\n') ? /\r?\n/ : '|')
+    .map((l) => l.trim())
+    .filter(Boolean);
 
+/** Resolve a guest line to a sender id + text, honouring an "O2:" style prefix. */
+function guestLine(line: string, guestCount: number): {sender: string; text: string} {
+  const num = line.match(/^(?:o|ospite|guest|g)\s*(\d+)\s*[:：]\s*(.*)$/i);
+  if (num) return {sender: `p${clamp(parseInt(num[1], 10) - 1, 0, guestCount - 1)}`, text: num[2].trim()};
+  const bare = line.match(/^(?:o|ospite|guest|g)\s*[:：]\s*(.*)$/i);
+  if (bare) return {sender: 'p0', text: bare[1].trim()};
+  return {sender: 'p0', text: line};
+}
+
+/** Build one video's chat items from a single spreadsheet row. */
+function buildItems(
+  cells: {domanda: string; onesto: string; cordiale: string; risposta: string},
+  guestCount: number,
+): ChatItem[] {
+  const items: ChatItem[] = [{type: 'separator', label: 'Today'}];
+  let first = true;
   const lastMessage = () => {
     for (let i = items.length - 1; i >= 0; i--) {
       if (items[i].type === 'message') return items[i] as Extract<ChatItem, {type: 'message'}>;
@@ -85,48 +103,42 @@ function buildItems(cell: string, guestCount: number): ChatItem[] {
     return null;
   };
   const push = (sender: string, text: string, draft?: string) => {
-    const item: ChatItem = {type: 'message', sender, text};
-    if (draft) item.draft = draft;
-    if (firstMessage) {
-      item.animate = false; // first message is already on screen
-      firstMessage = false;
+    if (!text) return;
+    const it: ChatItem = {type: 'message', sender, text};
+    if (draft) it.draft = draft;
+    if (first) {
+      it.animate = false; // the very first message is already on screen
+      first = false;
     }
-    items.push(item);
+    items.push(it);
+  };
+  const guests = (cell: string) => {
+    for (const line of splitLines(cell)) {
+      if (line.startsWith('+') && line.length <= 6) {
+        const prev = lastMessage();
+        if (prev) prev.reaction = line.slice(1).trim();
+        continue;
+      }
+      const {sender, text} = guestLine(line, guestCount);
+      push(sender, text);
+    }
   };
 
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (!line) continue;
+  guests(cells.domanda); // 1) the guest question(s)
 
-    if (line.startsWith('#')) {
-      const label = line.replace(/^#+\s*/, '').trim();
-      if (label) items.push({type: 'separator', label});
-      continue;
-    }
-    if (line.startsWith('+') && line.length <= 6) {
+  // 2) the host turn: honest draft(s) deleted, cordial message(s) sent (paired).
+  const onesto = splitLines(cells.onesto);
+  const cordiale = splitLines(cells.cordiale);
+  for (let i = 0; i < cordiale.length; i++) {
+    if (cordiale[i].startsWith('+') && cordiale[i].length <= 6) {
       const prev = lastMessage();
-      if (prev) prev.reaction = line.slice(1).trim();
+      if (prev) prev.reaction = cordiale[i].slice(1).trim();
       continue;
     }
-
-    const m = line.match(/^([A-Za-z]+\d*)\s*[:：]\s*(.*)$/);
-    const tag = m ? m[1].toUpperCase() : '';
-    const text = m ? m[2].trim() : line;
-    if (!text && tag !== 'HD') continue;
-
-    if (tag === 'HD') {
-      pendingDraft = text;
-    } else if (tag === 'H' || tag === 'HOST') {
-      push('host', text, pendingDraft);
-      pendingDraft = undefined;
-    } else if (/^G\d*$/.test(tag)) {
-      const n = tag.length > 1 ? parseInt(tag.slice(1), 10) - 1 : 0;
-      push(`p${clamp(n, 0, guestCount - 1)}`, text);
-    } else {
-      // No recognised tag → treat as a guest #1 line.
-      push('p0', text);
-    }
+    push('host', cordiale[i], onesto[i]);
   }
+
+  guests(cells.risposta); // 3) the guest reply/reaction(s) → drives "Read by all"
   return items;
 }
 
@@ -134,28 +146,32 @@ async function main() {
   const csvPath = path.resolve(process.argv[2] ?? path.join(ROOT, 'conversations.csv'));
   if (!fs.existsSync(csvPath)) {
     console.error(`\n  ✗ File CSV non trovato: ${csvPath}`);
-    console.error(`    Esporta il tuo Google Sheet come CSV e mettilo lì, oppure:`);
+    console.error(`    Esporta il tuo Google Sheet come CSV, oppure:`);
     console.error(`    npm run batch -- percorso/del/tuo-file.csv\n`);
     process.exit(1);
   }
 
   const rows = parseCSV(fs.readFileSync(csvPath, 'utf8'));
   if (rows.length < 2) {
-    console.error('  ✗ Il CSV non ha righe di dati (serve un\'intestazione + almeno una riga).');
+    console.error('  ✗ Il CSV deve avere un\'intestazione + almeno una riga di dati.');
     process.exit(1);
   }
   const header = rows[0].map((h) => h.trim().toLowerCase());
   const col = (...names: string[]) => names.map((n) => header.indexOf(n)).find((i) => i >= 0) ?? -1;
   const ci = {
-    name: col('name', 'titolo', 'title'),
-    guests: col('guests', 'guest', 'ospiti'),
-    host: col('host_name', 'host', 'nome_host'),
-    conv: col('conversation', 'conversazione', 'chat', 'script'),
+    nome: col('nome', 'name', 'titolo', 'title'),
+    ospiti: col('ospiti', 'guests', 'guest', 'n_ospiti'),
+    host: col('host', 'host_name', 'nome_host'),
+    domanda: col('domanda', 'domande', 'messaggio_ospite', 'messaggi_ospite', 'ospite', 'guest_msg'),
+    onesto: col('onesto', 'honest', 'draft', 'messaggio_onesto', 'autentico'),
+    cordiale: col('cordiale', 'cordial', 'messaggio', 'risposta_host', 'sent'),
+    risposta: col('risposta', 'risposta_ospite', 'reply', 'guest_reply', 'risposte'),
   };
-  if (ci.conv < 0) {
-    console.error('  ✗ Manca la colonna "conversation" nell\'intestazione del CSV.');
+  if (ci.domanda < 0 && ci.cordiale < 0) {
+    console.error('  ✗ Servono almeno le colonne "domanda" e/o "cordiale" nell\'intestazione.');
     process.exit(1);
   }
+  const get = (row: string[], i: number) => (i >= 0 ? row[i] ?? '' : '');
 
   const dataRows = rows.slice(1);
   console.log(`\n  Trovate ${dataRows.length} conversazioni. Preparo il motore di render…`);
@@ -167,20 +183,38 @@ async function main() {
   let done = 0;
   for (let r = 0; r < dataRows.length; r++) {
     const row = dataRows[r];
-    const conv = row[ci.conv] ?? '';
-    if (!conv.trim()) continue;
+    const guests = clamp(parseInt(get(row, ci.ospiti), 10) || 2, 2, 6);
+    const items = buildItems(
+      {
+        domanda: get(row, ci.domanda),
+        onesto: get(row, ci.onesto),
+        cordiale: get(row, ci.cordiale),
+        risposta: get(row, ci.risposta),
+      },
+      guests,
+    );
+    if (items.filter((i) => i.type === 'message').length === 0) continue; // empty row
 
-    const guests = clamp(parseInt(ci.guests >= 0 ? row[ci.guests] : '', 10) || 2, 2, 6);
-    const hostName = (ci.host >= 0 && row[ci.host]?.trim()) || DEFAULT_PROPS.hostName;
-    let base = (ci.name >= 0 && slug(row[ci.name] ?? '')) || `video-${r + 1}`;
+    const hostName = get(row, ci.host).trim() || DEFAULT_PROPS.hostName;
+    const base = slug(get(row, ci.nome)) || `video-${r + 1}`;
     let outName = base;
     for (let k = 2; used.has(outName); k++) outName = `${base}-${k}`;
     used.add(outName);
 
+    if (process.env.DRY) {
+      console.log(`\n=== ${outName} (ospiti:${guests}, host:${hostName}) ===`);
+      for (const it of items) {
+        if (it.type === 'separator') console.log(`  --- ${it.label} ---`);
+        else console.log(`  ${it.sender.padEnd(5)} ${it.draft ? `[onesto:"${it.draft}"] ` : ''}${it.text}${it.reaction ? ` (${it.reaction})` : ''}${it.animate === false ? ' [già a schermo]' : ''}`);
+      }
+      done++;
+      continue;
+    }
+
     const seed = r + 1; // stable per row, different across rows
     const props: ChatProps = {
       ...DEFAULT_PROPS,
-      items: buildItems(conv, guests),
+      items,
       hostName,
       participants: makeParticipants(guests, seed),
       headerDate: pickDate(seed),
