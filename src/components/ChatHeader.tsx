@@ -196,7 +196,7 @@ export const ChatHeader: React.FC<{
           fontWeight: 500,
           color: theme.ash,
           marginTop: 10,
-          maxWidth: 880,
+          maxWidth: 610, // measured from the references — always clips with "…"
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',

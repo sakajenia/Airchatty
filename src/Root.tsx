@@ -1,6 +1,7 @@
 import React from 'react';
 import {Composition, registerRoot} from 'remotion';
 import {ChatReel} from './ChatReel';
+import {Wireframe} from './Wireframe';
 import {chatPropsSchema, ChatProps, DEFAULT_PROPS, SAMPLE_SCRIPT} from './schema';
 import {parseScript} from './parseScript';
 import {buildTimeline} from './timeline';
@@ -41,4 +42,11 @@ export const RemotionRoot: React.FC = () => {
   );
 };
 
-registerRoot(RemotionRoot);
+export const RootWithWireframe: React.FC = () => (
+  <>
+    <RemotionRoot />
+    <Composition id="HeaderWireframe" component={Wireframe} fps={30} width={1080} height={940} durationInFrames={1} />
+  </>
+);
+
+registerRoot(RootWithWireframe);
