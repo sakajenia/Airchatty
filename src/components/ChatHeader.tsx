@@ -1,128 +1,173 @@
 import React from 'react';
-import {theme, initialsFromName, avatarColor} from '../util';
+import {theme} from '../util';
+import {Avatar} from './Avatar';
 
-const Avatar: React.FC<{name: string; src: string; size: number}> = ({name, src, size}) => {
-  if (src) {
-    return (
-      <img
-        src={src}
-        width={size}
-        height={size}
-        style={{borderRadius: size, objectFit: 'cover', display: 'block'}}
-      />
-    );
-  }
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size,
-        background: avatarColor(name),
-        color: 'white',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontWeight: 700,
-        fontSize: size * 0.4,
-        fontFamily: theme.font,
-      }}
-    >
-      {initialsFromName(name)}
-    </div>
-  );
-};
-
-/** iOS-style status bar (time, signal, wifi, battery). */
+/** iPhone status bar with the Dynamic Island. */
 export const StatusBar: React.FC = () => (
   <div
     style={{
-      height: 64,
-      padding: '0 44px',
+      height: 104,
+      padding: '0 52px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
       fontFamily: theme.font,
-      color: '#000',
-      fontSize: 30,
-      fontWeight: 600,
+      color: theme.ink,
+      position: 'relative',
     }}
   >
-    <span>9:41</span>
-    <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-      {/* signal */}
-      <div style={{display: 'flex', alignItems: 'flex-end', gap: 4, height: 22}}>
-        {[10, 14, 18, 22].map((h, i) => (
-          <div key={i} style={{width: 6, height: h, background: '#000', borderRadius: 2}} />
+    {/* time + silenced bell */}
+    <div style={{display: 'flex', alignItems: 'center', gap: 12, fontSize: 34, fontWeight: 600}}>
+      <span>13:37</span>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill={theme.ink}>
+        <path d="M12 3a6 6 0 0 0-6 6v3.6l-1.5 2.4A1 1 0 0 0 5.3 17h13.4a1 1 0 0 0 .8-1.6L18 13V9a6 6 0 0 0-6-6zm0 17a2.4 2.4 0 0 0 2.3-1.8H9.7A2.4 2.4 0 0 0 12 20z" />
+        <path d="M2 4l18 16" stroke={theme.ink} strokeWidth="1.6" />
+      </svg>
+    </div>
+
+    {/* Dynamic Island */}
+    <div
+      style={{
+        position: 'absolute',
+        left: '50%',
+        top: 22,
+        transform: 'translateX(-50%)',
+        width: 264,
+        height: 74,
+        background: '#000',
+        borderRadius: 40,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 24px',
+      }}
+    >
+      <div style={{width: 26, height: 26, borderRadius: 13, background: '#f5a623'}} />
+      <div style={{width: 18, height: 18, borderRadius: 9, background: '#1c1c1c'}} />
+    </div>
+
+    {/* signal · 5G · battery */}
+    <div style={{display: 'flex', alignItems: 'center', gap: 14}}>
+      <div style={{display: 'flex', alignItems: 'flex-end', gap: 5, height: 26}}>
+        {[12, 17, 22, 26].map((h, i) => (
+          <div key={i} style={{width: 7, height: h, background: theme.ink, borderRadius: 2}} />
         ))}
       </div>
-      {/* wifi */}
-      <svg width="34" height="24" viewBox="0 0 34 24" fill="#000">
-        <path d="M17 4C10.5 4 5 7 1 11l3 3c3.5-3.4 8-5.5 13-5.5s9.5 2.1 13 5.5l3-3C29 7 23.5 4 17 4z" opacity="0.9" />
-        <path d="M17 12c-3.3 0-6.3 1.4-8.5 3.6L11 18c1.6-1.6 3.7-2.5 6-2.5s4.4.9 6 2.5l2.5-2.4C23.3 13.4 20.3 12 17 12z" />
-        <circle cx="17" cy="20.5" r="2.5" />
-      </svg>
-      {/* battery */}
+      <span style={{fontSize: 30, fontWeight: 600}}>5G</span>
       <div
         style={{
-          width: 46,
-          height: 24,
-          border: '2px solid #000',
-          borderRadius: 6,
-          padding: 2,
+          width: 50,
+          height: 26,
+          border: `2px solid ${theme.ink}`,
+          borderRadius: 7,
+          padding: 3,
           position: 'relative',
         }}
       >
-        <div style={{width: '80%', height: '100%', background: '#000', borderRadius: 2}} />
+        <div style={{width: '85%', height: '100%', background: theme.ink, borderRadius: 2}} />
         <div
-          style={{
-            position: 'absolute',
-            right: -5,
-            top: 7,
-            width: 3,
-            height: 10,
-            background: '#000',
-            borderRadius: 2,
-          }}
+          style={{position: 'absolute', right: -6, top: 8, width: 3, height: 10, background: theme.ink, borderRadius: 2}}
         />
       </div>
     </div>
   </div>
 );
 
-export const ChatHeader: React.FC<{name: string; avatar: string}> = ({name, avatar}) => {
-  // Split a label like "Maria · Lisbon Host" into a name + subtitle.
-  const [primary, ...rest] = name.split(/\s*[·|]\s*/);
-  const subtitle = rest.join(' · ');
+export type Participant = {name: string; src: string};
+
+const AvatarCluster: React.FC<{participants: Participant[]}> = ({participants}) => {
+  const size = 76;
+  return (
+    <div style={{display: 'flex', alignItems: 'center'}}>
+      {participants.slice(0, 3).map((p, i) => (
+        <div
+          key={i}
+          style={{
+            marginLeft: i === 0 ? 0 : -22,
+            borderRadius: '50%',
+            border: `3px solid ${theme.white}`,
+            zIndex: participants.length - i,
+          }}
+        >
+          <Avatar name={p.name} src={p.src} size={size} />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export const ChatHeader: React.FC<{
+  title: string;
+  subtitle: string;
+  participants: Participant[];
+}> = ({title, subtitle, participants}) => {
   return (
     <div
       style={{
-        background: theme.headerBg,
+        background: theme.white,
         borderBottom: `1px solid ${theme.hairline}`,
-        padding: '10px 28px 22px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 22,
+        padding: '4px 0 26px',
         fontFamily: theme.font,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
       }}
     >
-      {/* back chevron + Airbnb accent */}
-      <div style={{fontSize: 48, color: theme.rausch, fontWeight: 300, lineHeight: 1}}>‹</div>
-      <Avatar name={name} src={avatar} size={88} />
-      <div style={{display: 'flex', flexDirection: 'column', flex: 1, gap: 4}}>
-        <div style={{fontSize: 38, fontWeight: 700, color: '#1A1A1A'}}>{primary}</div>
-        <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
-          <div style={{width: 16, height: 16, borderRadius: 8, background: theme.online}} />
-          <span style={{fontSize: 26, color: theme.subtle}}>
-            {subtitle ? `${subtitle} · Active now` : 'Active now'}
-          </span>
+      {/* back · avatar cluster · Details */}
+      <div
+        style={{
+          position: 'relative',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: 84,
+        }}
+      >
+        <svg
+          style={{position: 'absolute', left: 44}}
+          width="46"
+          height="46"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={theme.ink}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+
+        <AvatarCluster participants={participants} />
+
+        <div
+          style={{
+            position: 'absolute',
+            right: 44,
+            border: `1px solid ${theme.hairline}`,
+            borderRadius: 40,
+            padding: '12px 30px',
+            fontSize: 28,
+            fontWeight: 600,
+            color: theme.ink,
+            background: theme.white,
+          }}
+        >
+          Details
         </div>
       </div>
-      {/* Airbnb-style call/video icon */}
-      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke={theme.rausch} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="6" width="13" height="12" rx="3" />
-        <path d="M15 10l6-3.5v11L15 14" />
-      </svg>
+
+      <div style={{fontSize: 36, fontWeight: 700, color: theme.ink, marginTop: 14, letterSpacing: -0.3}}>
+        {title}
+      </div>
+      <div style={{fontSize: 27, fontWeight: 500, color: theme.ash, marginTop: 7}}>{subtitle}</div>
+      <div style={{display: 'flex', alignItems: 'center', gap: 10, marginTop: 9, color: theme.ash}}>
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={theme.ash} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 5h7M7.5 5c0 4-2 7-5 8.5M5 9c0 2.5 2.5 4.5 5.5 5.5" />
+          <path d="M13 19l4-9 4 9M14.5 16h5" />
+        </svg>
+        <span style={{fontSize: 24, fontWeight: 500}}>Translation on</span>
+      </div>
     </div>
   );
 };

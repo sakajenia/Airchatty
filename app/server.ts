@@ -12,7 +12,7 @@ import * as esbuild from 'esbuild';
 import {bundle} from '@remotion/bundler';
 import {selectComposition, renderMedia} from '@remotion/renderer';
 import {parseScript} from '../src/parseScript';
-import {ChatProps} from '../src/schema';
+import {ChatProps, DEFAULT_PROPS} from '../src/schema';
 
 const ROOT = path.join(__dirname, '..');
 const PORT = Number(process.env.PORT) || 3000;
@@ -60,16 +60,22 @@ app.get('/app.js', (_req, res) => res.type('application/javascript').send(appJs)
 
 app.post('/render', async (req, res) => {
   try {
-    const {script, hostName, hostAvatar, youSide, speed, sound} = req.body ?? {};
+    const b = req.body ?? {};
+    const hostName = String(b.hostName ?? DEFAULT_PROPS.hostName);
+    const guestName = String(b.guestName ?? DEFAULT_PROPS.guestName);
     const props: ChatProps = {
-      messages: parseScript(String(script ?? ''), String(hostName ?? '')),
-      hostName: String(hostName ?? 'Host'),
-      hostAvatar: String(hostAvatar ?? ''),
-      youSide: youSide === 'host' ? 'host' : 'guest',
-      speed: Math.max(0.3, Math.min(3, Number(speed) || 1)),
-      sound: Boolean(sound),
+      ...DEFAULT_PROPS,
+      items: parseScript(String(b.script ?? ''), {hostName, guestName}),
+      hostName,
+      guestName,
+      hostAvatar: String(b.hostAvatar ?? ''),
+      guestAvatar: String(b.guestAvatar ?? ''),
+      headerSubtitle: String(b.headerSubtitle ?? DEFAULT_PROPS.headerSubtitle),
+      youSide: b.youSide === 'host' ? 'host' : 'guest',
+      speed: Math.max(0.3, Math.min(3, Number(b.speed) || 1)),
+      sound: Boolean(b.sound),
     };
-    if (props.messages.length === 0) {
+    if (props.items.filter((i) => i.type === 'message').length === 0) {
       res.status(400).json({error: 'Please type a conversation first.'});
       return;
     }

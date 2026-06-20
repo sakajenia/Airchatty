@@ -1,20 +1,32 @@
-import {Message} from './schema';
+import {ChatItem} from './schema';
 
-export type Segment = {
-  message: Message;
+export type MessageSeg = {
+  kind: 'message';
   index: number;
-  /** True when this message is on the "you" (right, accent) side. */
+  sender: 'host' | 'guest';
+  text: string;
+  reaction?: string;
   isYou: boolean;
-  /** Frame at which the bubble pops in (and the pop sound plays). */
   revealFrame: number;
-  /** Frame at which the typing "…" indicator appears (null for your own msgs). */
+  /** Frame the typing "…" indicator appears (null for your own messages). */
   typingStartFrame: number | null;
-  /** Wall-clock label shown with the bubble, e.g. "14:32". */
   timeLabel: string;
+  /** Grouping flags for avatar/label rendering. */
+  isFirstOfGroup: boolean;
+  isLastOfGroup: boolean;
 };
 
+export type SeparatorSeg = {
+  kind: 'separator';
+  index: number;
+  label: string;
+  revealFrame: number;
+};
+
+export type Seg = MessageSeg | SeparatorSeg;
+
 export type Timeline = {
-  segments: Segment[];
+  segments: Seg[];
   fps: number;
   durationInFrames: number;
 };
@@ -22,61 +34,72 @@ export type Timeline = {
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 /**
- * Convert messages into a frame-accurate timeline.
- *
- * The pacing mimics a real conversation:
- *  - Messages from the OTHER person are preceded by a typing "…" indicator
- *    whose length grows with the message length.
- *  - Your OWN messages appear after a short "composing" beat (no dots — you
- *    don't watch your own typing indicator).
- *  - After each message there's a read pause so the viewer can follow along.
+ * Convert chat items into a frame-accurate timeline that mimics a real
+ * conversation: the OTHER person's messages are preceded by typing "…" dots
+ * (length scales with the message), your OWN messages appear after a short
+ * composing beat, and there's a read pause after each.
  */
 export const buildTimeline = (
-  messages: Message[],
+  items: ChatItem[],
   opts: {fps: number; speed: number; youSide: 'guest' | 'host'},
 ): Timeline => {
   const {fps, speed, youSide} = opts;
   const sec = (s: number) => s * fps * speed;
 
-  const segments: Segment[] = [];
-  let frame = sec(0.5); // small lead-in
+  // Precompute grouping: a message is grouped with the previous if it shares
+  // the same sender and isn't separated by a date divider.
+  const senderAt = (i: number): 'host' | 'guest' | null =>
+    items[i] && items[i].type === 'message' ? (items[i] as Extract<ChatItem, {type: 'message'}>).sender : null;
 
-  // Fake clock that ticks forward a little each message.
-  let clock = 14 * 60 + 32; // minutes since midnight => 14:32
+  const segments: Seg[] = [];
+  let frame = sec(0.4);
+
+  let clock = 14 * 60 + 32; // 14:32
   const fmt = (mins: number) => {
     const h = Math.floor(mins / 60) % 24;
     const m = mins % 60;
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   };
 
-  messages.forEach((message, index) => {
-    const isYou = message.sender === youSide;
-    const chars = message.text.length;
-    let typingStartFrame: number | null = null;
+  items.forEach((item, index) => {
+    if (item.type === 'separator') {
+      segments.push({kind: 'separator', index, label: item.label, revealFrame: Math.round(frame)});
+      frame += sec(0.7);
+      return;
+    }
 
+    const isYou = item.sender === youSide;
+    const chars = item.text.length;
+    const isFirstOfGroup = senderAt(index - 1) !== item.sender;
+    const isLastOfGroup = senderAt(index + 1) !== item.sender;
+
+    let typingStartFrame: number | null = null;
     if (isYou) {
-      // You composing — a short beat, no visible dots.
       frame += sec(clamp(0.35 + chars * 0.012, 0.35, 1.1));
     } else {
-      // The other person: brief pause, then typing dots scaled by length.
-      frame += sec(0.25);
+      frame += sec(isFirstOfGroup ? 0.25 : 0.12);
       typingStartFrame = Math.round(frame);
       frame += sec(clamp(0.6 + chars * 0.02, 0.7, 2.3));
     }
 
     const revealFrame = Math.round(frame);
-    clock += 1; // advance the on-screen clock by a minute-ish
+    clock += 1;
     segments.push({
-      message,
+      kind: 'message',
       index,
+      sender: item.sender,
+      text: item.text,
+      reaction: item.reaction,
       isYou,
       revealFrame,
       typingStartFrame,
       timeLabel: fmt(clock),
+      isFirstOfGroup,
+      isLastOfGroup,
     });
 
-    // Read pause before the next turn (longer for longer messages).
-    frame += sec(clamp(0.9 + chars * 0.03, 1.1, 3.4));
+    // Read pause (longer for longer messages, extra if a reaction lands).
+    frame += sec(clamp(0.85 + chars * 0.03, 1.0, 3.2) + (item.reaction ? 0.9 : 0));
   });
 
   const durationInFrames = Math.max(Math.round(frame + sec(1.2)), fps);

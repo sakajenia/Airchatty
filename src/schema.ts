@@ -1,48 +1,80 @@
 import {z} from 'zod';
 
 /**
- * A single chat message. `sender` is normalized to either the host or the guest.
- * The raw label the user typed (e.g. "Maria", "Host") is kept for reference.
+ * A chat item is either a message or a centered date separator
+ * ("Today", "Wednesday", "26 May", …). Messages may carry an emoji reaction.
  */
-export const messageSchema = z.object({
+export const messageItemSchema = z.object({
+  type: z.literal('message'),
   sender: z.enum(['host', 'guest']),
   text: z.string(),
+  reaction: z.string().optional(),
 });
-export type Message = z.infer<typeof messageSchema>;
+export const separatorItemSchema = z.object({
+  type: z.literal('separator'),
+  label: z.string(),
+});
+export const chatItemSchema = z.discriminatedUnion('type', [
+  messageItemSchema,
+  separatorItemSchema,
+]);
+export type MessageItem = z.infer<typeof messageItemSchema>;
+export type SeparatorItem = z.infer<typeof separatorItemSchema>;
+export type ChatItem = z.infer<typeof chatItemSchema>;
 
 /**
- * Everything the ChatReel composition needs to render. These are the "props"
- * that are editable in Remotion Studio and sent from the web app.
+ * Everything the ChatReel composition needs. These props are editable in
+ * Remotion Studio and sent from the web app.
  */
 export const chatPropsSchema = z.object({
-  // The conversation, already parsed into messages.
-  messages: z.array(messageSchema),
-  // Header info for the Airbnb-style chat screen.
+  items: z.array(chatItemSchema),
+  // The two people in the chat. The "other" person (not `youSide`) appears on
+  // the left with their avatar + a "Name · Role time" label. "You" appear on
+  // the right in a dark bubble with no avatar (just like the real Airbnb app).
   hostName: z.string(),
-  // URL or data-URL for the host photo. Empty string => default avatar.
-  hostAvatar: z.string(),
-  // Which column is "you" (the right-hand, accent-colored side).
+  hostRole: z.string(),
+  hostAvatar: z.string(), // URL/data-URL; empty => initials avatar
+  guestName: z.string(),
+  guestRole: z.string(),
+  guestAvatar: z.string(),
   youSide: z.enum(['guest', 'host']),
-  // Pacing multiplier. 1 = normal, <1 faster, >1 slower.
+  // Centered header subtitle, e.g. "15–17 Jun · Casa Lisboa".
+  headerSubtitle: z.string(),
   speed: z.number().min(0.3).max(3),
-  // Toggle message-pop sounds + background music.
   sound: z.boolean(),
 });
 export type ChatProps = z.infer<typeof chatPropsSchema>;
 
-/** A friendly default conversation so the canvas is never empty. */
-export const SAMPLE_SCRIPT = `Host: Hi Maria! Welcome to Lisbon 🌸 So excited to host you
+/**
+ * A friendly default conversation. Special lines:
+ *   "# Today"  -> a centered date separator
+ *   "+❤️"      -> attaches a reaction to the previous message
+ */
+export const SAMPLE_SCRIPT = `# Today
+Host: Hi Maria! Welcome to Lisbon 🌸 So excited to host you
 Guest: Thank you so much!! We can't wait 😍
 Guest: Quick question — what time can we check in?
 Host: Anytime after 3pm. I'll text you the door code that morning 🔑
 Guest: Perfect, you're the best 🙏
-Host: Also there's a little rooftop with sunset views — don't miss it 🌅`;
++❤️
+Host: Also don't miss the rooftop — best sunset in the city 🌅`;
 
 export const DEFAULT_PROPS: ChatProps = {
-  messages: [], // filled in by Root via calculateMetadata/defaultProps parsing
-  hostName: 'Maria · Lisbon Host',
+  items: [],
+  hostName: 'Sofia',
+  hostRole: 'Host',
   hostAvatar: '',
+  guestName: 'Maria',
+  guestRole: 'Booker',
+  guestAvatar: '',
   youSide: 'guest',
+  headerSubtitle: '15–17 Jun · Casa Lisboa',
   speed: 1,
   sound: true,
 };
+
+/** Resolve display info for a message's sender from the props. */
+export const personFor = (sender: 'host' | 'guest', p: ChatProps) =>
+  sender === 'host'
+    ? {name: p.hostName, role: p.hostRole, avatar: p.hostAvatar}
+    : {name: p.guestName, role: p.guestRole, avatar: p.guestAvatar};

@@ -9,10 +9,12 @@ const FPS = 30;
 const WIDTH = 1080;
 const HEIGHT = 1920;
 
-// Default props for the Studio: parse the built-in sample conversation.
 const defaultProps: ChatProps = {
   ...DEFAULT_PROPS,
-  messages: parseScript(SAMPLE_SCRIPT, DEFAULT_PROPS.hostName),
+  items: parseScript(SAMPLE_SCRIPT, {
+    hostName: DEFAULT_PROPS.hostName,
+    guestName: DEFAULT_PROPS.guestName,
+  }),
 };
 
 export const RemotionRoot: React.FC = () => {
@@ -26,9 +28,8 @@ export const RemotionRoot: React.FC = () => {
       width={WIDTH}
       height={HEIGHT}
       durationInFrames={300}
-      // Auto-size the video to the conversation length from the props.
       calculateMetadata={({props}) => {
-        const {durationInFrames} = buildTimeline(props.messages, {
+        const {durationInFrames} = buildTimeline(props.items, {
           fps: FPS,
           speed: props.speed,
           youSide: props.youSide,

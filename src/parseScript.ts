@@ -1,41 +1,64 @@
-import {Message} from './schema';
+import {ChatItem} from './schema';
 
 /**
- * Turn a pasted plain-text script into structured messages.
+ * Turn a pasted plain-text script into structured chat items.
  *
- * Format (one message per line):
- *   Host: Hello there
- *   Guest: Hi! What time is check-in?
+ * Format (one item per line):
+ *   Host: Hello there            -> a message from the host (left/grey or you)
+ *   Guest: Hi! What time?        -> a message from the guest
+ *   # Today                      -> a centered date separator
+ *   +❤️                          -> attaches a reaction to the previous message
  *
  * Rules:
- *  - The label before the first ":" decides the side.
- *  - "host" / "owner" / "h" => host side (left). Anything starting with the
- *    host's known custom name also maps to host.
- *  - "guest" / "tourist" / "me" / "you" / "g" => guest side (right).
- *  - A line WITHOUT a recognized "label:" continues the previous speaker as a
- *    new bubble (so you can paste multi-line messages naturally).
+ *  - The label before the first ":" decides the side. "host"/"owner" => host,
+ *    "guest"/"tourist"/"me"/"you" => guest. The host's/guest's real names also
+ *    work as labels (e.g. "Sofia:" or "Maria:").
+ *  - A line without a recognized label continues the previous speaker.
  *  - Blank lines are ignored.
- *
- * `hostName` lets a user label lines with the real host name (e.g. "Maria:")
- * and still have them recognized as the host.
  */
-const HOST_WORDS = ['host', 'owner', 'h'];
-const GUEST_WORDS = ['guest', 'tourist', 'traveler', 'traveller', 'me', 'you', 'g'];
+const HOST_WORDS = ['host', 'owner', 'cohost', 'co-host', 'h'];
+const GUEST_WORDS = ['guest', 'tourist', 'traveler', 'traveller', 'booker', 'me', 'you', 'g'];
 
 const firstWord = (s: string) => s.trim().toLowerCase().split(/\s+/)[0] ?? '';
 
-export const parseScript = (script: string, hostName = ''): Message[] => {
-  const hostFirst = firstWord(hostName);
+export const parseScript = (
+  script: string,
+  names: {hostName?: string; guestName?: string} = {},
+): ChatItem[] => {
+  const hostFirst = firstWord(names.hostName ?? '');
+  const guestFirst = firstWord(names.guestName ?? '');
   const lines = script.split(/\r?\n/);
-  const messages: Message[] = [];
-  let lastSender: Message['sender'] = 'host';
+  const items: ChatItem[] = [];
+  let lastSender: 'host' | 'guest' = 'host';
+
+  const lastMessage = () => {
+    for (let i = items.length - 1; i >= 0; i--) {
+      if (items[i].type === 'message') return items[i] as Extract<ChatItem, {type: 'message'}>;
+    }
+    return null;
+  };
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
 
+    // Date separator: "# Today"
+    if (line.startsWith('#')) {
+      const label = line.replace(/^#+\s*/, '').trim();
+      if (label) items.push({type: 'separator', label});
+      continue;
+    }
+
+    // Reaction: "+❤️" attaches to the previous message
+    if (line.startsWith('+') && line.length <= 6) {
+      const emoji = line.slice(1).trim();
+      const prev = lastMessage();
+      if (prev && emoji) prev.reaction = emoji;
+      continue;
+    }
+
     const colonIdx = line.indexOf(':');
-    let sender: Message['sender'] | null = null;
+    let sender: 'host' | 'guest' | null = null;
     let text = line;
 
     if (colonIdx > 0 && colonIdx <= 24) {
@@ -44,22 +67,21 @@ export const parseScript = (script: string, hostName = ''): Message[] => {
       if (HOST_WORDS.includes(label) || (hostFirst && label === hostFirst)) {
         sender = 'host';
         text = body;
-      } else if (GUEST_WORDS.includes(label)) {
+      } else if (GUEST_WORDS.includes(label) || (guestFirst && label === guestFirst)) {
         sender = 'guest';
         text = body;
       }
     }
 
     if (sender === null) {
-      // No recognized label: treat as a continuation bubble from last speaker.
-      sender = lastSender;
+      sender = lastSender; // continuation
       text = line;
     }
-
     if (!text) continue;
-    messages.push({sender, text});
+
+    items.push({type: 'message', sender, text});
     lastSender = sender;
   }
 
-  return messages;
+  return items;
 };
