@@ -8,7 +8,7 @@ import {
   useVideoConfig,
 } from 'remotion';
 import {ChatProps, personFor} from './schema';
-import {buildTimeline, MessageSeg} from './timeline';
+import {buildTimeline, composerStateAt, MessageSeg} from './timeline';
 import {theme, useClientHeight, useNaturalHeight} from './util';
 import {ChatHeader, StatusBar, Participant} from './components/ChatHeader';
 import {InputBar} from './components/InputBar';
@@ -51,17 +51,10 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
         frame >= s.keyboardStartFrame &&
         frame < s.revealFrame,
     );
-    if (active && active.keyboardStartFrame != null) {
-      const elapsed = frame - active.keyboardStartFrame;
-      const len = active.text.length;
-      const k = Math.floor(elapsed / active.charDur);
-      if (k >= len) {
-        composerText = active.text; // finished, holding before send
-      } else {
-        composerText = active.text.slice(0, k + 1);
-        const localInSlot = elapsed - k * active.charDur;
-        if (localInSlot < active.charDur * 0.62) pressedKey = keyForChar(active.text[k]);
-      }
+    if (active) {
+      const state = composerStateAt(active, frame);
+      composerText = state.text;
+      pressedKey = keyForChar(state.pressedChar);
       sendActive = composerText.length > 0;
     }
   }
@@ -140,16 +133,29 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
         </div>
       )}
 
-      {/* Audio: a pop when each message is sent/received + a soft music bed. */}
+      {/* Audio: only the keyboard — a click per character, a duller tock per
+          delete — exactly like typing on an iPhone. Nothing else. */}
       {sound &&
-        segments
-          .filter((s) => s.kind === 'message')
-          .map((s) => (
-            <Sequence key={`pop-${s.index}`} from={s.revealFrame} durationInFrames={Math.ceil(fps * 0.6)}>
-              <Audio src={staticFile('pop.wav')} volume={0.5} />
-            </Sequence>
-          ))}
-      {sound && <Audio src={staticFile('music.wav')} volume={0.09} loop />}
+        keyboard &&
+        segments.flatMap((s) =>
+          s.kind === 'message' && s.keystrokes && s.keyboardStartFrame != null
+            ? s.keystrokes.map((k, i) => {
+                const at = (s.keyboardStartFrame as number) + i * s.charDur;
+                return (
+                  <Sequence
+                    key={`k-${s.index}-${i}`}
+                    from={at}
+                    durationInFrames={Math.ceil(fps * 0.12)}
+                  >
+                    <Audio
+                      src={staticFile(k.kind === 'delete' ? 'keydelete.wav' : 'keytype.wav')}
+                      volume={0.7}
+                    />
+                  </Sequence>
+                );
+              })
+            : [],
+        )}
     </AbsoluteFill>
   );
 };
