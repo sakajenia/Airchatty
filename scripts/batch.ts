@@ -191,6 +191,7 @@ async function main() {
 
   const used = new Set<string>();
   let done = 0;
+  const failed: string[] = [];
   for (let g = 0; g < groups.length; g++) {
     const {chat, rows} = groups[g];
     const firstWith = (k: keyof Row) => rows.find((r) => r[k])?.[k] ?? '';
@@ -230,21 +231,37 @@ async function main() {
       headerApt: pickApartment(seed),
     };
 
-    const composition = await selectComposition({serveUrl, id: 'ChatReel', inputProps: props});
     const outFile = path.join(outDir, `${outName}.mp4`);
     console.log(`  [${g + 1}/${groups.length}] render → out/${outName}.mp4`);
-    await renderMedia({
-      composition,
-      serveUrl,
-      codec: 'h264',
-      outputLocation: outFile,
-      inputProps: props,
-      concurrency: 2,
-      timeoutInMilliseconds: 120000,
-    });
-    done++;
+    // Render with retries and continue past failures — Remotion's headless
+    // Chrome occasionally drops a page ("Target closed"); a retry fixes it, and
+    // one flaky video must never abort the whole batch.
+    let ok = false;
+    for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
+      try {
+        const composition = await selectComposition({serveUrl, id: 'ChatReel', inputProps: props});
+        await renderMedia({
+          composition,
+          serveUrl,
+          codec: 'h264',
+          outputLocation: outFile,
+          inputProps: props,
+          concurrency: 1, // most stable on small/limited hosts
+          timeoutInMilliseconds: 180000,
+        });
+        ok = true;
+      } catch (err) {
+        console.error(`    ⚠ tentativo ${attempt}/3 fallito: ${(err as Error).message.split('\n')[0]}`);
+      }
+    }
+    if (ok) done++;
+    else {
+      failed.push(outName);
+      console.error(`    ✗ ${outName} saltato dopo 3 tentativi.`);
+    }
   }
-  console.log(`\n  ✓ Fatto! ${done} ${process.env.DRY ? 'conversazioni' : 'video'} ${process.env.DRY ? 'lette' : `pronti in: ${outDir}`}\n`);
+  if (failed.length) console.log(`\n  ⚠ Falliti: ${failed.join(', ')}`);
+  console.log(`\n  ✓ Fatto! ${done} ${process.env.DRY ? 'conversazioni lette' : `video pronti in: ${outDir}`}\n`);
 }
 
 main().catch((e) => {
