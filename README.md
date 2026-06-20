@@ -6,56 +6,44 @@ read receipts, and sound. Built with [Remotion](https://www.remotion.dev).
 
 ---
 
-## 🎬 Modalità BATCH — tanti video da una sola tabella (consigliata)
+## 🎬 Modalità BATCH — tanti video da un solo Google Sheet (consigliata)
 
-Vuoi scrivere **tutte** le conversazioni in una volta e ottenere **tutti i video
-pronti** in automatico? Questa è la strada. Una riga della tabella = un video.
+Scrivi **tutte** le conversazioni nel Google Sheet "Airchatty" e ottieni **tutti i
+video pronti** in automatico. **Una RIGA = un MESSAGGIO**; le righe con lo stesso
+valore nella colonna `chat` formano un video.
 
-1. Apri il template **Google Sheet** (o copia `conversations.example.csv`).
-2. Compila una riga per ogni video.
-3. In Google Sheet: **File → Scarica → Valori separati da virgola (.csv)**.
-4. Dai il CSV a me (lo carichi qui) **oppure**, sul tuo computer:
-   ```bash
-   npm run batch -- conversations.csv
-   ```
-5. Trovi tutti gli MP4 nella cartella `out/`. 🎉
+1. Apri il Google Sheet "Airchatty" (o copia `conversations.example.csv`).
+2. Compila i messaggi: una riga per messaggio, stesso `chat` = stesso video.
+3. **File → Scarica → CSV** e dai il file a me (oppure `npm run batch -- file.csv`).
+4. Trovi tutti gli MP4 nella cartella `out/`. 🎉
 
-### Le colonne della tabella
+### Le colonne
 
-| Colonna | Obbligatoria | Cosa scrivere |
-| --- | --- | --- |
-| `name` | no | Nome del file video (es. `luci`). Se vuoto → `video-1`, `video-2`… |
-| `guests` | no | Numero di ospiti nella chat, 2–6 (default 2). |
-| `host_name` | no | Il tuo nome come host (default Lorenzo). |
-| `conversation` | **sì** | La conversazione, **un messaggio per riga** (Alt+Invio nella cella). |
+| Colonna | Cosa scrivere |
+| --- | --- |
+| `chat` | **Raggruppa** i messaggi in un video + nome del file (es. `luci`). |
+| `ospiti` | Numero di ospiti 2–6 (solo sulla 1ª riga del video; default 2). |
+| `host` | Il tuo nome come host (1ª riga; default Lorenzo). |
+| `foto_host` | Foto host: file in `public/` (`faces/face1.jpg`), nome file caricato (→ `public/uploads/…`) o URL. |
+| `da` | Chi manda il messaggio: `Host`, `O1`, `O2`, `O3`… (default `O1`). |
+| `testo` | Il testo del messaggio. |
+| `onesto` | Solo host: il messaggio **onesto** digitato e poi **cancellato** prima di `testo`. |
+| `foto` | Una foto allegata al messaggio (nome file / percorso / URL). |
+| `foto_pos` | Posizione della foto rispetto al testo: `prima` o `dopo` (default). |
 
 > Nomi/foto degli ospiti, date e nome dell'appartamento sono **casuali e diversi
-> per ogni riga** — non li scrivi tu, li genera Airchatty.
+> per ogni chat** — non li scrivi tu, li genera Airchatty. Tu carichi solo la foto
+> dell'host e le eventuali foto allegate ai messaggi.
 
-### Come si scrive la cella `conversation`
+### Le foto
 
-Un messaggio per riga, con un'etichetta all'inizio:
+Non si possono "caricare" immagini dentro una cella. Metti i file immagine nella
+cartella **"Airchatty" del Google Drive** (o in `public/uploads/`) e nel foglio
+scrivi solo il **nome del file** (es. `salotto.jpg`). In fase di render l'immagine
+viene scaricata e inserita come bolla foto. Puoi anche incollare un **URL**.
 
-| Scrivi | Significato |
-| --- | --- |
-| `G: ...` | Messaggio dell'ospite #1 |
-| `G2: ...` | Messaggio dell'ospite #2 (`G3:`, `G4:`… fino al numero di ospiti) |
-| `HD: ...` | Il messaggio **ONESTO** dell'host: viene digitato e poi **cancellato** |
-| `H: ...` | Il messaggio cordiale dell'host che viene **inviato davvero** |
-| `+❤️` | Aggiunge una reazione al messaggio precedente |
-| `# Oggi` | Una riga separatore con la data |
-
-Una riga `HD:` si "attacca" alla riga `H:` successiva (prima digita l'onesto, lo
-cancella, poi scrive e invia il cordiale). Esempio di una cella:
-
-```
-G: Ciao! Scusa il disturbo 🙂
-G: Dove si accendono le luci??
-HD: Ma è possibile che tu non veda gli interruttori??
-H: Le luci sono di fianco alla porta, sulla destra 😊
-```
-
-Vedi `conversations.example.csv` per un esempio completo con 3 video.
+Vedi `conversations.example.csv` per un esempio completo con 3 video (incluso uno
+con foto allegata).
 
 ---
 
