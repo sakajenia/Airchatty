@@ -75,14 +75,14 @@ export const StatusBar: React.FC = () => (
 
 export type HeaderAvatar = {name: string; src: string};
 
-// Airbnb group cluster, measured from the reference: the photos sit side by
-// side and just *touch* (the right one raised), each fully visible — they do
-// NOT cover one another. A letter avatar tucks into the bottom-right.
+// Airbnb group cluster, measured from the references: the avatars are SEPARATE
+// floating circles — none of them touch. A photo sits lower-left, a second is
+// up-and-right of it (with a clear gap), and a letter avatar floats bottom-right.
 const CLUSTERS: Record<number, {size: number; x: number; y: number}[]> = {
-  1: [{size: 96, x: 33, y: 14}],
-  2: [{size: 90, x: 0, y: 20}, {size: 80, x: 84, y: 0}],
-  3: [{size: 90, x: 0, y: 23}, {size: 78, x: 84, y: 0}, {size: 47, x: 106, y: 76}],
-  4: [{size: 90, x: 0, y: 23}, {size: 78, x: 84, y: 0}, {size: 47, x: 106, y: 76}, {size: 47, x: 48, y: 80}],
+  1: [{size: 94, x: 42, y: 14}],
+  2: [{size: 88, x: 0, y: 20}, {size: 80, x: 96, y: 0}],
+  3: [{size: 86, x: 0, y: 24}, {size: 78, x: 94, y: 0}, {size: 46, x: 118, y: 86}],
+  4: [{size: 86, x: 0, y: 24}, {size: 78, x: 94, y: 0}, {size: 46, x: 118, y: 86}, {size: 46, x: 50, y: 90}],
 };
 
 const AvatarCluster: React.FC<{participants: HeaderAvatar[]}> = ({participants}) => {
@@ -90,7 +90,7 @@ const AvatarCluster: React.FC<{participants: HeaderAvatar[]}> = ({participants})
   const n = Math.min(Math.max(sorted.length, 1), 4);
   const spec = CLUSTERS[n];
   return (
-    <div style={{position: 'relative', width: 162, height: 130}}>
+    <div style={{position: 'relative', width: 178, height: 140}}>
       {sorted.slice(0, 4).map((p, i) => {
         const s = spec[i] ?? spec[spec.length - 1];
         return (
@@ -125,7 +125,7 @@ export const ChatHeader: React.FC<{
       style={{
         background: theme.white,
         borderBottom: `1px solid ${theme.hairline}`,
-        padding: '4px 0 26px',
+        padding: '22px 0 30px',
         fontFamily: theme.font,
         display: 'flex',
         flexDirection: 'column',
@@ -140,7 +140,7 @@ export const ChatHeader: React.FC<{
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          minHeight: 126,
+          minHeight: 144,
         }}
       >
         <svg
