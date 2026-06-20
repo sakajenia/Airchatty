@@ -2,8 +2,7 @@ import React from 'react';
 import {Composition, registerRoot} from 'remotion';
 import {ChatReel} from './ChatReel';
 import {Wireframe} from './Wireframe';
-import {chatPropsSchema, ChatProps, DEFAULT_PROPS, SAMPLE_SCRIPT} from './schema';
-import {parseScript} from './parseScript';
+import {chatPropsSchema, ChatProps, DEFAULT_PROPS, DEFAULT_ITEMS} from './schema';
 import {buildTimeline} from './timeline';
 
 const FPS = 30;
@@ -12,10 +11,7 @@ const HEIGHT = 1920;
 
 const defaultProps: ChatProps = {
   ...DEFAULT_PROPS,
-  items: parseScript(SAMPLE_SCRIPT, {
-    hostName: DEFAULT_PROPS.hostName,
-    participants: DEFAULT_PROPS.participants,
-  }),
+  items: DEFAULT_ITEMS,
 };
 
 export const RemotionRoot: React.FC = () => {

@@ -121,6 +121,7 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
                 <MessageBubble
                   key={s.index}
                   text={s.text}
+                  photo={s.photo ? (s.photo.startsWith('data:') || s.photo.startsWith('http') ? s.photo : staticFile(s.photo)) : undefined}
                   isYou={s.isYou}
                   revealFrame={s.revealFrame}
                   timeLabel={s.timeLabel}

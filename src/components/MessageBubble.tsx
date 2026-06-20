@@ -5,6 +5,7 @@ import {Avatar} from './Avatar';
 
 export type ChatBubbleProps = {
   text: string;
+  photo?: string;
   isYou: boolean;
   revealFrame: number;
   timeLabel: string;
@@ -79,6 +80,7 @@ const GlossyHeart: React.FC<{size: number}> = ({size}) => (
 
 export const MessageBubble: React.FC<ChatBubbleProps> = ({
   text,
+  photo,
   isYou,
   revealFrame,
   timeLabel,
@@ -100,7 +102,22 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
   const measured = naturalH != null;
   const wrapperHeight = measured ? naturalH * open : undefined;
 
-  const bubble = (
+  const bubble = photo ? (
+    <div
+      style={{
+        width: 470,
+        borderRadius: 36,
+        ...(isYou
+          ? {borderBottomRightRadius: isLastOfGroup ? 14 : 36}
+          : {borderBottomLeftRadius: isLastOfGroup ? 14 : 36}),
+        overflow: 'hidden',
+        background: theme.incomingBubble,
+        lineHeight: 0,
+      }}
+    >
+      <img src={photo} style={{width: '100%', display: 'block', objectFit: 'cover'}} />
+    </div>
+  ) : (
     <div
       style={{
         maxWidth: 740,

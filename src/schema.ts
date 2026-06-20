@@ -10,6 +10,14 @@ export const messageItemSchema = z.object({
   sender: z.string(),
   text: z.string(),
   reaction: z.string().optional(),
+  // Host only: an "honest" draft typed out then fully deleted before `text` is
+  // typed and sent (the polite version).
+  draft: z.string().optional(),
+  // Photo message — renders an image bubble (sent separately from any text).
+  photo: z.string().optional(),
+  // false → the message is already on screen when recording starts (no typing
+  // / no "…" dots). Used for the very first message of the conversation.
+  animate: z.boolean().optional(),
 });
 export const separatorItemSchema = z.object({
   type: z.literal('separator'),
@@ -66,11 +74,27 @@ Giulia: Perfetto, siete gentilissimi 🙏
 +❤️
 Host: E non perdetevi la terrazza sul tetto, tramonto pazzesco 🌅`;
 
-/** Default participants for the sample (some with an AI face, one without). */
+/** Default participants for the sample (one with an AI face, one without). */
 export const DEFAULT_PARTICIPANTS: Participant[] = [
   {name: 'Giulia', role: 'Booker', avatar: 'faces/face2.jpg'},
   {name: 'Marco', role: 'Booker', avatar: ''},
-  {name: 'Sofia', role: 'Co-host', avatar: 'faces/face4.jpg'},
+];
+
+/**
+ * Default conversation demonstrating the core mechanic: the guest asks a silly
+ * question, the host types the honest (rude) reply, deletes it, then sends a
+ * polite one. The first message is already on screen (no animation).
+ */
+export const DEFAULT_ITEMS: ChatItem[] = [
+  {type: 'separator', label: 'Today'},
+  {type: 'message', sender: 'p0', text: 'Ciao! Scusa il disturbo 🙂', animate: false},
+  {type: 'message', sender: 'p0', text: 'Dove si accendono le luci?? Non riesco a trovarle 🙈'},
+  {
+    type: 'message',
+    sender: 'host',
+    draft: 'Ma è possibile che tu non veda gli interruttori che ci sono in ogni stanza??',
+    text: "Ciao! Le luci sono di fianco alla porta d'ingresso, sulla destra 😊",
+  },
 ];
 
 export const DEFAULT_PROPS: ChatProps = {
