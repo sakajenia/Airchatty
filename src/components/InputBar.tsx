@@ -23,10 +23,13 @@ export const InputBar: React.FC = () => (
             <path d="M12 5v14M5 12h14" />
           </svg>
         </div>
-        <svg width="68" height="68" viewBox="0 0 24 24" fill="none" stroke={theme.ink} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M11 4.5h7.5A1.7 1.7 0 0 1 20.2 6.2V11.5" />
-          <path d="M4.6 7.5h8.8A1.7 1.7 0 0 1 15.1 9.2v4.6a1.7 1.7 0 0 1-1.7 1.7H8l-2.6 2.2v-2.2h-.8A1.7 1.7 0 0 1 2.9 13.8V9.2A1.7 1.7 0 0 1 4.6 7.5z" />
-          <path d="M5.8 11h6.4M5.8 13.2h4.2" />
+        <svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke={theme.ink} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="8.7" y="3.5" width="11.8" height="9" rx="2.6" fill={theme.white} />
+          <path
+            d="M5.6 7h7.5a2.6 2.6 0 0 1 2.6 2.6v3.8a2.6 2.6 0 0 1-2.6 2.6h-2.5l-1.5 2.1-1.5-2.1H5.6A2.6 2.6 0 0 1 3 13.4V9.6A2.6 2.6 0 0 1 5.6 7z"
+            fill={theme.white}
+          />
+          <path d="M6 10.4h6M6 12.9h3.8" />
         </svg>
         <div style={{flex: 1}} />
         <div

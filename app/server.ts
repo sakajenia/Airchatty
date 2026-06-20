@@ -93,6 +93,8 @@ app.post('/render', async (req, res) => {
       codec: 'h264',
       outputLocation: outFile,
       inputProps: props,
+      concurrency: 2,
+      timeoutInMilliseconds: 120000,
     });
 
     res.download(outFile, 'airbnb-chat-reel.mp4');

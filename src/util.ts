@@ -1,4 +1,5 @@
 import {useLayoutEffect, useRef, useState} from 'react';
+import {brandFont} from './font';
 
 /**
  * Airbnb design tokens (from the official Airbnb design system) tuned to the
@@ -24,8 +25,9 @@ export const theme = {
   outgoingBubble: '#3a3a3a', // dark charcoal bubble for "you" (NOT pink)
   outgoingText: '#ffffff',
 
-  // Cereal VF is proprietary; fall back through the documented stack.
-  font: `"Airbnb Cereal", "Circular", -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
+  // Cereal VF is proprietary; Mulish (loaded via Google Fonts) is the closest
+  // free match. Falls back through the documented stack.
+  font: `${brandFont}, "Circular", -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
 };
 
 /**
