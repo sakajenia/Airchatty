@@ -3,3 +3,5 @@ out/
 .cache/
 *.log
 .DS_Store
+service-account.json
+*.serviceaccount.json
