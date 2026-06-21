@@ -120,7 +120,7 @@ function buildItems(rows: Row[], hostName: string, guestCount: number): ChatItem
     const photoFirst = (r.foto_pos ?? '').trim().toLowerCase().startsWith('prima');
 
     if (photo && photoFirst) push(sender, '', {photo});
-    if (text || drafts.length) push(sender, text, {drafts});
+    if (text || (drafts.length && sender === 'host')) push(sender, text, {drafts: sender === 'host' ? drafts : []});
     if (photo && !photoFirst) push(sender, '', {photo});
   }
   return items;
