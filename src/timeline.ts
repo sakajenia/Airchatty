@@ -3,6 +3,8 @@ import {ChatItem} from './schema';
 export type Keystroke = {
   kind: 'type' | 'delete' | 'shift';
   char?: string;
+  /** For a delete: how many characters it removes at once (whole-word block). Default 1. */
+  n?: number;
   /** Start frame relative to keyboardStartFrame. */
   at: number;
 };
@@ -98,16 +100,28 @@ const buildKeystrokes = (
     }
   };
 
-  // Delete the current field one letter at a time, with a gentle acceleration
-  // capped at a floor so every letter stays individually visible (it never
-  // speeds up so much that whole words look like they vanish at once).
+  // Delete like holding the iPhone backspace key: the last two words go letter by
+  // letter (gentle acceleration), then from the third word onward each whole word
+  // is wiped in a single block — a gradual, "exponential" feel.
   const deleteAll = (s: string) => {
+    const tokens = s.match(/\s*\S+/g) ?? [s]; // each token = leading spaces + word
     const startDur = charDur * 1.15;
     const floorDur = Math.max(2.6, charDur * 0.85);
-    for (let i = s.length - 1; i >= 0; i--) {
-      const deleted = s.length - 1 - i;
-      const dur = Math.max(floorDur, startDur - deleted * (charDur * 0.05));
-      push({kind: 'delete'}, dur);
+    let letters = 0;
+    let wordsDeleted = 0;
+    for (let t = tokens.length - 1; t >= 0; t--) {
+      const tok = tokens[t];
+      wordsDeleted++;
+      if (wordsDeleted <= 2) {
+        for (let i = tok.length - 1; i >= 0; i--) {
+          const dur = Math.max(floorDur, startDur - letters * (charDur * 0.05));
+          push({kind: 'delete'}, dur);
+          letters++;
+        }
+      } else {
+        const dur = Math.max(charDur * 1.0, charDur * 1.9 - (wordsDeleted - 3) * (charDur * 0.2));
+        push({kind: 'delete', n: tok.length}, dur);
+      }
     }
   };
 
@@ -140,7 +154,7 @@ export const composerStateAt = (
   for (let i = 0; i < applied; i++) {
     const k = ks[i];
     if (k.kind === 'type') buf += k.char ?? '';
-    else if (k.kind === 'delete') buf = buf.slice(0, -1);
+    else if (k.kind === 'delete') buf = buf.slice(0, -(k.n ?? 1));
   }
   let pressedChar: string | null = null;
   const cur = applied - 1;
@@ -174,7 +188,8 @@ export const buildTimeline = (
   },
 ): Timeline => {
   const {fps, speed, typingFor, keyboard = false} = opts;
-  const sec = (s: number) => s * fps * speed;
+  // `speed` is a true speed multiplier: higher = faster typing AND shorter pauses.
+  const sec = (s: number) => (s * fps) / speed;
   const charDur = Math.max(2, Math.round(3.4 / speed));
 
   const senderAt = (i: number): string | null =>

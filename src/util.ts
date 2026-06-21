@@ -27,7 +27,7 @@ export const theme = {
 
   // Cereal VF is proprietary; Mulish (loaded via Google Fonts) is the closest
   // free match. Falls back through the documented stack.
-  font: `${brandFont}, "Circular", -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
+  font: `${brandFont}, "Circular", -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`,
 };
 
 /**

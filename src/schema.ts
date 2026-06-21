@@ -111,7 +111,7 @@ export const DEFAULT_PROPS: ChatProps = {
   headerApt: 'Villa di Prestigio Privata con Piscina e Suite',
   typingFor: 'guest',
   keyboard: true,
-  speed: 1,
+  speed: 1.4, // faster keyboard typing + snappier pacing
   sound: true,
 };
 

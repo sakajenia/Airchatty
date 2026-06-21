@@ -28,27 +28,34 @@ diventano sempre più esasperate) → respiro → calma totale (la risposta cord
 
 Quello che vorrebbe mandare ma non può. Da 1 a 5 frasi, in escalation.
 
-**Tono:** sarcastico, esasperato, incredulo, tagliente.
-**Lunghezza:** cortissime, 1–6 parole. Sono sfoghi, non spiegazioni.
-**Punteggiatura:** vocali allungate (`serioooo`), `???`, `!!!`, puntini `...`.
-**Parolacce:** leggere e bonarie, da pubblico generalista (no volgarità pesanti).
-**Insulti:** velati, più "presa in giro" che offesa vera.
+**Tono:** cinico, **subdolo**, cattivello. Prende per il culo in modo **fine** ma
+pungente — fa ridere proprio perché è acido. Niente buonismo: qui si sfoga davvero.
+**Lunghezza:** cortissime, 1–6 parole. Sfoghi secchi, mai spiegazioni.
+**Punteggiatura:** vocali allungate (`serioooo`), `???`, `!!!`, puntini `...`, minuscolo.
+**Parolacce:** **circa il 40% delle frasi** contiene una parolaccia o una presa
+per il culo pesante (cazzo, coglione, scemo, deficiente, stronzata, ma vaffanculo…).
+L'altro 60% è sarcasmo tagliente e subdolo, senza parolacce.
+**Insulti:** diretti ma con stile — la cattiveria è nell'ironia, non nella volgarità gratuita.
 
-**Vocabolario ammesso (esempi):**
-> pirla · ma ci fai o ci sei? · santa pazienza · ma dai · stai scherzando? ·
-> ma sul serio? · serioooo? · non ci posso credere · ma leggi ogni tanto? ·
-> ma è possibile? · ma dove vivi? · ma ti pagano per questo? · ma per favore ·
-> che pizza · ma apri gli occhi · oddio · ma basta · mamma mia che pazienza ·
-> ci risiamo · ma cosa vuoi · aiuto · ma vai a quel paese (velato)
+**Vocabolario / registro (esempi):**
+> *Sarcasmo subdolo (60%):* ma sul serio? · ci fai o ci sei? · geniale, davvero ·
+> certo, e poi? · bella pensata · ma leggi mai? · ma dove vivi? · numero uno ·
+> complimenti eh · e io ci guadagno cosa? · ma anche no · che mente brillante ·
+> serioooo??? · ma in che mondo vivi · adoro questa gente
+>
+> *Pesante (40%):* ma sei scemo? · ma che cazzo dici · coglione · ma vaffanculo ·
+> ma sei deficiente? · ma che stronzata · ma sei serio cazzo · ma chi te l'ha detto, scemo ·
+> ma vai a cagare · porca miseria · sei fuori di testa · ma che ti fumi
 
-**Regola d'oro:** mai razzismo, sessismo, minacce o volgarità forti. Deve restare
-**divertente e pubblicabile** sui social.
+**Regola d'oro:** cattivo e volgare quanto vuoi, MA mai razzismo, sessismo,
+minacce reali o riferimenti a categorie protette. Deve restare **ragebait
+divertente e pubblicabile** sui social, non un insulto vero a una persona reale.
 
-### Escalation tipica (più frasi salgono di tono)
-1. Incredulità: *"ma sul serio?"*
-2. Sarcasmo: *"ci fai davvero?"*
-3. Esasperazione: *"serioooo??? mamma mia"*
-4. Resa comica: *"ma vai…"* / *"santa pazienza"*
+### Escalation tipica (le frasi salgono di tono e cattiveria)
+1. Incredulità subdola: *"ma sul serio?"*
+2. Sarcasmo acido: *"geniale, e io ci guadagno cosa?"*
+3. Esasperazione: *"ma sei serio cazzo"*
+4. Mazzata finale: *"ma vaffanculo"* / *"coglione"* / *"ma anche no eh"*
 
 ---
 
@@ -72,20 +79,20 @@ concreta richiesta.
 ## Esempi completi (domanda → oneste → cordiale)
 
 **Ospite: "Ciao dove sono le luci?"**
-- onesto: `ma sul serio? | ci fai davvero? | serioooo??? | santa pazienza`
+- onesto: `ma sul serio? | ci fai o ci sei? | ma sei deficiente? | apri gli occhi coglione`
 - testo: `Ciao! Gli interruttori sono di fianco alla porta d'ingresso, sulla destra 😊`
 
 **Ospite: "A che ora è il check-in?"**
-- onesto: `c'è scritto ovunque | ma leggi ogni tanto? | mamma mia`
+- onesto: `c'è scritto ovunque | ma leggi mai? | ma che cazzo`
 - testo: `Ciao! Il check-in è dalle 15:00, ti mando il codice della porta appena pronto 🔑`
 
 **Ospite: "Qual è la password del wifi?"**
-- onesto: `è attaccata al router | ma apri gli occhi | aiuto`
+- onesto: `è sul router | sei cieco? | porca miseria`
 - testo: `Ciao! La rete è CasaSole e la password è sul frigorifero 📶 Fammi sapere!`
 
-**Ospite: "Si può fumare in casa?"**
-- onesto: `ma dove vivi? | ma per favore | che pizza`
-- testo: `Ciao! In casa no, ma c'è un bel balcone dove puoi fumare tranquillo 😊`
+**Ospite: "Posso pagare solo 1 notte su 3?"**
+- onesto: `geniale | e io ci guadagno cosa? | ma vaffanculo va`
+- testo: `Ciao! La tariffa è a notte prenotata, le date restano bloccate per te 😊`
 
 ---
 
