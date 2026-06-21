@@ -57,10 +57,10 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 const buildKeystrokes = (
   text: string,
   charDur: number,
-  draft?: string,
+  drafts: string[] = [],
 ): {keystrokes: Keystroke[]; total: number} => {
   let seed = 7;
-  const seedStr = (draft ?? '') + text;
+  const seedStr = drafts.join('') + text;
   for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
   const rand = () => {
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;
@@ -98,21 +98,27 @@ const buildKeystrokes = (
     }
   };
 
-  // The "honest" draft: type it fully, hesitate, then delete it letter by letter.
-  if (draft) {
-    typeString(draft);
-    at += charDur * 8; // the host re-reads it and thinks twice
-    // Delete one letter at a time with a gentle acceleration that CAPS at a
-    // floor, so every letter stays individually visible (it never speeds up so
-    // much that it looks like whole words vanish at once).
+  // Delete the current field one letter at a time, with a gentle acceleration
+  // capped at a floor so every letter stays individually visible (it never
+  // speeds up so much that whole words look like they vanish at once).
+  const deleteAll = (s: string) => {
     const startDur = charDur * 1.15;
     const floorDur = Math.max(2.6, charDur * 0.85);
-    for (let i = draft.length - 1; i >= 0; i--) {
-      const deleted = draft.length - 1 - i;
+    for (let i = s.length - 1; i >= 0; i--) {
+      const deleted = s.length - 1 - i;
       const dur = Math.max(floorDur, startDur - deleted * (charDur * 0.05));
       push({kind: 'delete'}, dur);
     }
-    at += charDur * 4; // pause on the empty field before writing the polite reply
+  };
+
+  // The "honest" drafts: type each cynical phrase, hesitate, delete it, then move
+  // on to the next — up to 5 — before finally typing and sending the polite text.
+  for (const draft of drafts.slice(0, 5)) {
+    if (!draft) continue;
+    typeString(draft);
+    at += charDur * 6; // re-read it and think twice
+    deleteAll(draft);
+    at += charDur * 3; // a beat on the empty field before the next thought
   }
 
   typeString(text);
@@ -214,7 +220,8 @@ export const buildTimeline = (
       // and deleting it — then sends.
       frame += sec(isFirstOfGroup ? 0.55 : 0.25); // pick the phone up / think
       keyboardStartFrame = Math.round(frame);
-      const plan = buildKeystrokes(item.text, charDur, item.draft);
+      const draftList = item.drafts?.length ? item.drafts : item.draft ? [item.draft] : [];
+      const plan = buildKeystrokes(item.text, charDur, draftList);
       keystrokes = plan.keystrokes;
       frame += plan.total;
       frame += sec(0.55); // re-read the finished message before sending

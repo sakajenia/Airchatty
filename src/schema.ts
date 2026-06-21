@@ -13,6 +13,10 @@ export const messageItemSchema = z.object({
   // Host only: an "honest" draft typed out then fully deleted before `text` is
   // typed and sent (the polite version).
   draft: z.string().optional(),
+  // Host only: SEVERAL cynical drafts, each typed then deleted one after another
+  // (up to 5), before the polite `text` is finally sent. Takes priority over
+  // `draft` when present.
+  drafts: z.array(z.string()).optional(),
   // Photo message — renders an image bubble (sent separately from any text).
   photo: z.string().optional(),
   // false → the message is already on screen when recording starts (no typing

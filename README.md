@@ -27,7 +27,7 @@ valore nella colonna `chat` formano un video.
 | `foto_host` | Foto host: file in `public/` (`faces/face1.jpg`), nome file caricato (→ `public/uploads/…`) o URL. |
 | `da` | Chi manda il messaggio: `Host`, `O1`, `O2`, `O3`… (default `O1`). |
 | `testo` | Il testo del messaggio. |
-| `onesto` | Solo host: il messaggio **onesto** digitato e poi **cancellato** prima di `testo`. |
+| `onesto` | Solo host: una o più frasi **ciniche** digitate e poi **cancellate** prima di `testo`. Più frasi separate da `\|` (max 5), es. `ma sul serio? \| ci fai davvero? \| serioooo???`. Vedi `PERSONA.md` per tono e stile. |
 | `foto` | Una foto allegata al messaggio (nome file / percorso / URL). |
 | `foto_pos` | Posizione della foto rispetto al testo: `prima` o `dopo` (default). |
 

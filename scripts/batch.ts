@@ -95,9 +95,9 @@ type Row = Record<string, string>;
 function buildItems(rows: Row[], hostName: string, guestCount: number): ChatItem[] {
   const items: ChatItem[] = [{type: 'separator', label: 'Today'}];
   let first = true;
-  const push = (sender: string, text: string, opts: {draft?: string; photo?: string} = {}) => {
+  const push = (sender: string, text: string, opts: {drafts?: string[]; photo?: string} = {}) => {
     const it: ChatItem = {type: 'message', sender, text};
-    if (opts.draft) it.draft = opts.draft;
+    if (opts.drafts && opts.drafts.length) it.drafts = opts.drafts;
     if (opts.photo) it.photo = opts.photo;
     if (first) {
       it.animate = false; // the very first message is already on screen
@@ -109,12 +109,18 @@ function buildItems(rows: Row[], hostName: string, guestCount: number): ChatItem
   for (const r of rows) {
     const sender = senderId(r.da, hostName, guestCount);
     const text = (r.testo ?? '').trim();
-    const draft = (r.onesto ?? '').trim() || undefined;
+    // The "onesto" cell may hold several cynical phrases (one typed+deleted after
+    // another) separated by "|" or by line breaks — up to 5.
+    const drafts = (r.onesto ?? '')
+      .split(/\s*\|\s*|\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 5);
     const photo = resolvePhoto(r.foto);
     const photoFirst = (r.foto_pos ?? '').trim().toLowerCase().startsWith('prima');
 
     if (photo && photoFirst) push(sender, '', {photo});
-    if (text || draft) push(sender, text, {draft});
+    if (text || drafts.length) push(sender, text, {drafts});
     if (photo && !photoFirst) push(sender, '', {photo});
   }
   return items;
@@ -213,7 +219,7 @@ async function main() {
         if (it.type === 'separator') console.log(`  --- ${it.label} ---`);
         else
           console.log(
-            `  ${it.sender.padEnd(5)} ${it.draft ? `[onesto:"${it.draft}"] ` : ''}${it.photo ? `🖼 ${it.photo} ` : ''}${it.text}${it.animate === false ? ' [già a schermo]' : ''}`,
+            `  ${it.sender.padEnd(5)} ${it.drafts?.length ? `[onesto:${it.drafts.map((d) => `"${d}"`).join(' → ')}] ` : ''}${it.photo ? `🖼 ${it.photo} ` : ''}${it.text}${it.animate === false ? ' [già a schermo]' : ''}`,
           );
       }
       done++;
