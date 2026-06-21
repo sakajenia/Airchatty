@@ -134,6 +134,22 @@ async function main() {
     return;
   }
 
+  if (cmd === 'addtab') {
+    const tab = a;
+    const file = b;
+    if (!tab || !file) { console.error('  ✗ Servono <tab> e <file.csv>'); process.exit(1); }
+    const meta = await s.spreadsheets.get({spreadsheetId});
+    const exists = meta.data.sheets?.some((x) => x.properties?.title === tab);
+    if (!exists) {
+      await s.spreadsheets.batchUpdate({spreadsheetId, requestBody: {requests: [{addSheet: {properties: {title: tab}}}]}});
+    }
+    const values = parseCSV(fs.readFileSync(file, 'utf8'));
+    await s.spreadsheets.values.clear({spreadsheetId, range: tab});
+    await s.spreadsheets.values.update({spreadsheetId, range: `${tab}!A1`, valueInputOption: 'RAW', requestBody: {values}});
+    console.log(`  ✓ Scheda "${tab}" ${exists ? 'aggiornata' : 'creata'} (${values.length} righe).`);
+    return;
+  }
+
   console.error(`  ✗ Comando sconosciuto: ${cmd}`);
   process.exit(1);
 }
