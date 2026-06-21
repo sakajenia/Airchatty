@@ -37,25 +37,37 @@ per il culo pesante (cazzo, coglione, scemo, deficiente, stronzata, ma vaffancul
 L'altro 60% è sarcasmo tagliente e subdolo, senza parolacce.
 **Insulti:** diretti ma con stile — la cattiveria è nell'ironia, non nella volgarità gratuita.
 
-**Vocabolario / registro (esempi):**
-> *Sarcasmo subdolo (60%):* ma sul serio? · ci fai o ci sei? · geniale, davvero ·
-> certo, e poi? · bella pensata · ma leggi mai? · ma dove vivi? · numero uno ·
-> complimenti eh · e io ci guadagno cosa? · ma anche no · che mente brillante ·
-> serioooo??? · ma in che mondo vivi · adoro questa gente
+**⚠️ LA REGOLA PIÙ IMPORTANTE — come scrive DAVVERO la gente:**
+Sono **REAZIONI, non battute**. Vietato il setup-e-finale tipo *"ma al ristorante
+paghi solo i bocconi che mastichi?"* — quello è scritto, finto, da tema. Le persone
+vere buttano lì una **reazione secca**: cortissima, minuscolo, spesso col **punto
+deadpan** (`geniale.`). Niente metafore, niente analogie costruite, niente spiegazioni.
+
+**Registro autentico (per tipo, da mescolare):**
+> *Finto-complimento ironico:* `che genio` · `bravo` · `geniale.` · `complimenti` ·
+> `numero uno` · `campione` · `fenomeno` · `che mente` · `applausi` · `eh certo`
 >
-> *Pesante (40%):* ma sei scemo? · ma che cazzo dici · coglione · ma vaffanculo ·
-> ma sei deficiente? · ma che stronzata · ma sei serio cazzo · ma chi te l'ha detto, scemo ·
-> ma vai a cagare · porca miseria · sei fuori di testa · ma che ti fumi
+> *Finto-stupore:* `ma davvero?` · `no dai` · `addirittura` · `ma pensa` ·
+> `non ci credo` · `ma va?` · `oh però`
+>
+> *Liquidatorio:* `vabbè` · `ma figurati` · `ma per favore` · `ma per cortesia` ·
+> `ma piantala` · `embè?` · `e quindi?` · `ma chi se ne frega` · `ma dai su` · `ma smettila`
+>
+> *Deadpan retorico:* `e io?` · `e a me?` · `e che ci posso fare` · `e che ne so` ·
+> `non è un problema mio`
+>
+> *Esasperazione:* `aiuto` · `mamma mia` · `oddio` · `ci risiamo` · `ma perché`
+>
+> *Pesante (~40% delle frasi):* `ma che cazzo` · `ma vaffanculo` · `coglione` ·
+> `ma sei scemo?` · `sticazzi` · `ma vai a cagare` · `porca miseria` · `ma sei serio cazzo`
 
-**Regola d'oro:** cattivo e volgare quanto vuoi, MA mai razzismo, sessismo,
-minacce reali o riferimenti a categorie protette. Deve restare **ragebait
-divertente e pubblicabile** sui social, non un insulto vero a una persona reale.
+**Regola d'oro:** cattivo e volgare quanto vuoi, MA mai razzismo, sessismo, minacce
+reali o categorie protette. **Ragebait divertente e pubblicabile**, non insulto vero.
 
-### Escalation tipica (le frasi salgono di tono e cattiveria)
-1. Incredulità subdola: *"ma sul serio?"*
-2. Sarcasmo acido: *"geniale, e io ci guadagno cosa?"*
-3. Esasperazione: *"ma sei serio cazzo"*
-4. Mazzata finale: *"ma vaffanculo"* / *"coglione"* / *"ma anche no eh"*
+### Escalation reale (finto-buono → liquidatorio → pesante)
+- *"che genio"* → *"vabbè"* → *"ma vaffanculo va"*
+- *"ma davvero?"* → *"ma per favore"* → *"ma sei serio cazzo"*
+- *"complimenti"* → *"e a me?"* → *"coglione"*
 
 ---
 
