@@ -95,10 +95,11 @@ type Row = Record<string, string>;
 function buildItems(rows: Row[], hostName: string, guestCount: number): ChatItem[] {
   const items: ChatItem[] = [{type: 'separator', label: 'Today'}];
   let first = true;
-  const push = (sender: string, text: string, opts: {drafts?: string[]; photo?: string} = {}) => {
+  const push = (sender: string, text: string, opts: {drafts?: string[]; photo?: string; time?: string} = {}) => {
     const it: ChatItem = {type: 'message', sender, text};
     if (opts.drafts && opts.drafts.length) it.drafts = opts.drafts;
     if (opts.photo) it.photo = opts.photo;
+    if (opts.time) it.time = opts.time;
     if (first) {
       it.animate = false; // the very first message is already on screen
       first = false;
@@ -118,9 +119,10 @@ function buildItems(rows: Row[], hostName: string, guestCount: number): ChatItem
       .slice(0, 5);
     const photo = resolvePhoto(r.foto);
     const photoFirst = (r.foto_pos ?? '').trim().toLowerCase().startsWith('prima');
+    const time = (r.ora ?? '').trim() || undefined;
 
-    if (photo && photoFirst) push(sender, '', {photo});
-    if (text || (drafts.length && sender === 'host')) push(sender, text, {drafts: sender === 'host' ? drafts : []});
+    if (photo && photoFirst) push(sender, '', {photo, time});
+    if (text || (drafts.length && sender === 'host')) push(sender, text, {drafts: sender === 'host' ? drafts : [], time});
     if (photo && !photoFirst) push(sender, '', {photo});
   }
   return items;
@@ -152,6 +154,7 @@ async function main() {
     onesto: idx('onesto', 'honest', 'draft', 'autentico'),
     foto: idx('foto', 'photo', 'immagine', 'image'),
     foto_pos: idx('foto_pos', 'posizione_foto', 'photo_pos', 'foto_posizione'),
+    ora: idx('ora', 'orario', 'time', 'hour'),
   };
   if (cols.chat < 0) {
     console.error('  ✗ Manca la colonna "chat" (raggruppa i messaggi in un video).');
@@ -168,6 +171,7 @@ async function main() {
     onesto: cell(row, cols.onesto),
     foto: cell(row, cols.foto),
     foto_pos: cell(row, cols.foto_pos),
+    ora: cell(row, cols.ora),
   });
 
   // Group consecutive rows by `chat` (an empty chat inherits the previous one).
@@ -201,7 +205,7 @@ async function main() {
   for (let g = 0; g < groups.length; g++) {
     const {chat, rows} = groups[g];
     const firstWith = (k: keyof Row) => rows.find((r) => r[k])?.[k] ?? '';
-    const guests = clamp(parseInt(firstWith('ospiti'), 10) || 2, 2, 6);
+    const guests = clamp(parseInt(firstWith('ospiti'), 10) || 2, 1, 6);
     const hostName = firstWith('host') || DEFAULT_PROPS.hostName;
     const hostAvatar = resolvePhoto(firstWith('foto_host')) || DEFAULT_PROPS.hostAvatar;
 

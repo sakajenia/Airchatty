@@ -22,6 +22,9 @@ export const messageItemSchema = z.object({
   // false → the message is already on screen when recording starts (no typing
   // / no "…" dots). Used for the very first message of the conversation.
   animate: z.boolean().optional(),
+  // Explicit send time "HH:MM" shown on the bubble (e.g. "23:00"). When set, the
+  // message starts a new group so its time is visible.
+  time: z.string().optional(),
 });
 export const separatorItemSchema = z.object({
   type: z.literal('separator'),

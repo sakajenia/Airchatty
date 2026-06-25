@@ -218,8 +218,11 @@ export const buildTimeline = (
     const isHost = item.sender === 'host';
     const isYou = isHost;
     const chars = item.text.length;
-    const isFirstOfGroup = senderAt(index - 1) !== item.sender;
-    const isLastOfGroup = senderAt(index + 1) !== item.sender;
+    // An explicit send time forces a new group so the time label is shown.
+    const nextItem = items[index + 1];
+    const nextTimed = !!(nextItem && nextItem.type === 'message' && nextItem.time);
+    const isFirstOfGroup = senderAt(index - 1) !== item.sender || !!item.time;
+    const isLastOfGroup = senderAt(index + 1) !== item.sender || nextTimed;
     const isFirstMessage = messageCount === 0;
     messageCount++;
     // The very first message is "already on screen" when recording starts — no
@@ -264,7 +267,7 @@ export const buildTimeline = (
       keyboardStartFrame,
       charDur,
       keystrokes,
-      timeLabel: fmt(clock),
+      timeLabel: item.time ?? fmt(clock),
       isFirstOfGroup,
       isLastOfGroup,
     });
