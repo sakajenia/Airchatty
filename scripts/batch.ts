@@ -23,10 +23,33 @@
  */
 import path from 'path';
 import fs from 'fs';
+import {execSync} from 'child_process';
 import {bundle} from '@remotion/bundler';
 import {selectComposition, renderMedia} from '@remotion/renderer';
 import {ChatProps, ChatItem, DEFAULT_PROPS} from '../src/schema';
 import {makeParticipants, pickApartment, pickDate} from '../src/avatars';
+import {findEmojis, emojiCode} from '../src/emoji';
+
+/** Download the Twemoji SVG for every emoji used so they render in full colour. */
+function ensureTwemoji(text: string) {
+  const dir = path.join(ROOT, 'public', 'twemoji');
+  fs.mkdirSync(dir, {recursive: true});
+  const codes = [...new Set(findEmojis(text).map(emojiCode))];
+  let fetched = 0;
+  for (const code of codes) {
+    const file = path.join(dir, `${code}.svg`);
+    if (fs.existsSync(file) && fs.statSync(file).size > 0) continue;
+    const url = `https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/${code}.svg`;
+    try {
+      execSync(`curl -fsSL ${JSON.stringify(url)} -o ${JSON.stringify(file)}`, {stdio: 'ignore'});
+      if (fs.existsSync(file) && fs.statSync(file).size > 0) fetched++;
+      else fs.rmSync(file, {force: true});
+    } catch {
+      fs.rmSync(file, {force: true});
+    }
+  }
+  if (codes.length) console.log(`  🎨 Twemoji: ${codes.length} emoji presenti (${fetched} scaricate ora).`);
+}
 
 const ROOT = path.join(__dirname, '..');
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -195,6 +218,7 @@ async function main() {
   }
 
   console.log(`\n  Trovate ${groups.length} conversazioni. Preparo il motore di render…`);
+  ensureTwemoji(groups.flatMap((g) => g.rows.map((r) => `${r.testo} ${r.onesto} ${r.foto_pos}`)).join(' '));
   const serveUrl = process.env.DRY ? '' : await bundle({entryPoint: path.join(ROOT, 'src', 'Root.tsx'), onProgress: () => undefined});
   const outDir = path.join(ROOT, 'out');
   fs.mkdirSync(outDir, {recursive: true});

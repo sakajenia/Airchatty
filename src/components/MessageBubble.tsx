@@ -2,6 +2,7 @@ import React from 'react';
 import {spring, useCurrentFrame, useVideoConfig} from 'remotion';
 import {theme, useNaturalHeight} from '../util';
 import {Avatar} from './Avatar';
+import {EmojiText} from './EmojiText';
 
 export type ChatBubbleProps = {
   text: string;
@@ -136,7 +137,7 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
         wordBreak: 'break-word',
       }}
     >
-      {text}
+      <EmojiText text={text} />
     </div>
   );
 

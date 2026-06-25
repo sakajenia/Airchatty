@@ -1,6 +1,7 @@
 import React from 'react';
 import {useCurrentFrame} from 'remotion';
 import {theme} from '../util';
+import {EmojiText} from './EmojiText';
 
 /**
  * The Airbnb message composer: a rounded hairline-bordered card holding the
@@ -51,7 +52,7 @@ export const Composer: React.FC<{
         <div style={{fontSize: 44, lineHeight: 1.35, color: theme.ink, minHeight: 56}}>
           {text ? (
             <span>
-              {text}
+              <EmojiText text={text} />
               {caret}
             </span>
           ) : (
