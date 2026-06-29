@@ -129,6 +129,7 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
               if (s.kind === 'separator') {
                 return <DateSeparator key={`sep-${s.index}`} label={s.label} revealFrame={s.revealFrame} />;
               }
+              if (s.kind === 'interstitial') return null; // rendered full-frame below
               const p = personFor(s.sender, props);
               return (
                 <MessageBubble
@@ -200,6 +201,31 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
           }
           return audios;
         })}
+
+      {/* Mid-conversation interstitials (e.g. "A few moments later"): a full-frame
+          clip with its audio, plus a notification "ding" near the cut back. */}
+      {segments.flatMap((s) =>
+        s.kind === 'interstitial'
+          ? [
+              <Sequence key={`int-${s.index}`} from={s.revealFrame} durationInFrames={s.durationInFrames} layout="none">
+                <AbsoluteFill style={{background: '#000', zIndex: 900}}>
+                  <OffthreadVideo src={staticFile(s.clip)} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                </AbsoluteFill>
+              </Sequence>,
+              ...(s.sound
+                ? [
+                    <Sequence
+                      key={`int-snd-${s.index}`}
+                      from={Math.max(0, s.revealFrame + s.durationInFrames - Math.round(fps * 0.55))}
+                      durationInFrames={Math.ceil(fps * 1.3)}
+                    >
+                      <Audio src={staticFile(s.sound)} volume={0.95} />
+                    </Sequence>,
+                  ]
+                : []),
+            ]
+          : [],
+      )}
 
       {/* Meme outro: play the real clip (video + audio) full-frame, or fall back
           to the recreated credit text if no clip file is present. */}

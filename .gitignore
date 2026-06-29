@@ -6,3 +6,5 @@ out/
 service-account.json
 *.serviceaccount.json
 public/outro.mp4
+public/fewmoments.mp4
+public/notify.mp3

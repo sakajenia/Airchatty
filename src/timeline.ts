@@ -38,7 +38,16 @@ export type SeparatorSeg = {
   revealFrame: number;
 };
 
-export type Seg = MessageSeg | SeparatorSeg;
+export type InterstitialSeg = {
+  kind: 'interstitial';
+  index: number;
+  clip: string;
+  sound?: string;
+  revealFrame: number;
+  durationInFrames: number;
+};
+
+export type Seg = MessageSeg | SeparatorSeg | InterstitialSeg;
 
 export type Timeline = {
   segments: Seg[];
@@ -216,6 +225,21 @@ export const buildTimeline = (
     if (item.type === 'separator') {
       segments.push({kind: 'separator', index, label: item.label, revealFrame: Math.round(frame)});
       frame += sec(0.7);
+      return;
+    }
+
+    if (item.type === 'interstitial') {
+      frame += sec(0.25);
+      const start = Math.round(frame);
+      segments.push({
+        kind: 'interstitial',
+        index,
+        clip: item.clip,
+        sound: item.sound,
+        revealFrame: start,
+        durationInFrames: item.durationInFrames,
+      });
+      frame = start + item.durationInFrames + sec(0.1);
       return;
     }
 

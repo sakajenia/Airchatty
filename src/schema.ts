@@ -30,7 +30,18 @@ export const separatorItemSchema = z.object({
   type: z.literal('separator'),
   label: z.string(),
 });
-export const chatItemSchema = z.discriminatedUnion('type', [messageItemSchema, separatorItemSchema]);
+/** A full-screen interstitial clip mid-conversation (e.g. "A few moments later"). */
+export const interstitialItemSchema = z.object({
+  type: z.literal('interstitial'),
+  clip: z.string(),
+  sound: z.string().optional(),
+  durationInFrames: z.number(),
+});
+export const chatItemSchema = z.discriminatedUnion('type', [
+  messageItemSchema,
+  separatorItemSchema,
+  interstitialItemSchema,
+]);
 export type MessageItem = z.infer<typeof messageItemSchema>;
 export type SeparatorItem = z.infer<typeof separatorItemSchema>;
 export type ChatItem = z.infer<typeof chatItemSchema>;

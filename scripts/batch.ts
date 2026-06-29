@@ -51,6 +51,19 @@ function ensureTwemoji(text: string) {
   if (codes.length) console.log(`  🎨 Twemoji: ${codes.length} emoji presenti (${fetched} scaricate ora).`);
 }
 
+const FFMPEG = path.join(__dirname, '..', 'node_modules', '@remotion', 'compositor-linux-x64-gnu', 'ffmpeg');
+/** Probe a media file's duration in frames (best-effort; defaults to ~2s). */
+function clipFrames(file: string, fps: number): number {
+  try {
+    const out = execSync(`${JSON.stringify(FFMPEG)} -i ${JSON.stringify(file)} 2>&1 || true`, {encoding: 'utf8'});
+    const m = out.match(/Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/);
+    if (m) return Math.round((Number(m[1]) * 3600 + Number(m[2]) * 60 + parseFloat(m[3])) * fps);
+  } catch {
+    /* ignore — fall back below */
+  }
+  return Math.round(2 * fps);
+}
+
 const ROOT = path.join(__dirname, '..');
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 const slug = (s: string) =>
@@ -115,7 +128,7 @@ function senderId(da: string, hostName: string, guestCount: number): string {
 type Row = Record<string, string>;
 
 /** Build one video's chat items from its ordered message rows. */
-function buildItems(rows: Row[], hostName: string, guestCount: number): ChatItem[] {
+function buildItems(rows: Row[], hostName: string, guestCount: number, memeFrames: number): ChatItem[] {
   const items: ChatItem[] = [{type: 'separator', label: 'Today'}];
   let first = true;
   const push = (sender: string, text: string, opts: {drafts?: string[]; photo?: string; time?: string} = {}) => {
@@ -131,6 +144,12 @@ function buildItems(rows: Row[], hostName: string, guestCount: number): ChatItem
   };
 
   for (const r of rows) {
+    const da = (r.da ?? '').trim().toLowerCase();
+    if (memeFrames > 0 && ['meme', 'few', 'fewmoments', 'interstitial', 'stacco'].includes(da)) {
+      items.push({type: 'interstitial', clip: 'fewmoments.mp4', sound: 'notify.mp3', durationInFrames: memeFrames});
+      first = false; // an interstitial counts as content already on screen-flow
+      continue;
+    }
     const sender = senderId(r.da, hostName, guestCount);
     const text = (r.testo ?? '').trim();
     // The "onesto" cell may hold several cynical phrases (one typed+deleted after
@@ -221,6 +240,8 @@ async function main() {
 
   console.log(`\n  Trovate ${groups.length} conversazioni. Preparo il motore di render…`);
   ensureTwemoji(groups.flatMap((g) => g.rows.map((r) => `${r.testo} ${r.onesto} ${r.foto_pos}`)).join(' '));
+  const memePath = path.join(ROOT, 'public', 'fewmoments.mp4');
+  const memeFrames = fs.existsSync(memePath) ? clipFrames(memePath, 30) : 0;
   const serveUrl = process.env.DRY ? '' : await bundle({entryPoint: path.join(ROOT, 'src', 'Root.tsx'), onProgress: () => undefined});
   const outDir = path.join(ROOT, 'out');
   fs.mkdirSync(outDir, {recursive: true});
@@ -235,7 +256,7 @@ async function main() {
     const hostName = firstWith('host') || DEFAULT_PROPS.hostName;
     const hostAvatar = resolvePhoto(firstWith('foto_host')) || DEFAULT_PROPS.hostAvatar;
 
-    const items = buildItems(rows, hostName, guests);
+    const items = buildItems(rows, hostName, guests, memeFrames);
     if (items.filter((i) => i.type === 'message').length === 0) continue;
 
     let base = slug(chat) || `video-${g + 1}`;
@@ -247,6 +268,8 @@ async function main() {
       console.log(`\n=== ${outName} (ospiti:${guests}, host:${hostName}, foto_host:${hostAvatar}) ===`);
       for (const it of items) {
         if (it.type === 'separator') console.log(`  --- ${it.label} ---`);
+        else if (it.type === 'interstitial')
+          console.log(`  [MEME] ${it.clip} (${it.durationInFrames}f) + suono ${it.sound ?? '-'}`);
         else
           console.log(
             `  ${it.sender.padEnd(5)} ${it.drafts?.length ? `[onesto:${it.drafts.map((d) => `"${d}"`).join(' → ')}] ` : ''}${it.photo ? `🖼 ${it.photo} ` : ''}${it.text}${it.animate === false ? ' [già a schermo]' : ''}`,
