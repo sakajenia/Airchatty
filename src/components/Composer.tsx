@@ -17,13 +17,11 @@ export const Composer: React.FC<{
 }> = ({text, sendActive, typingName}) => {
   const frame = useCurrentFrame();
 
-  // Animated typing dots: solid BLACK dots doing a subtle staggered SIZE wave
-  // (no fading, no bounce) — a continuous loop, matching the reference.
-  const PERIOD = 40;
-  const dotScale = (i: number) => {
-    const s = (Math.sin((frame / PERIOD) * 2 * Math.PI - i * ((2 * Math.PI) / 3)) + 1) / 2;
-    return 0.72 + 0.5 * s; // 0.72 … 1.22
-  };
+  // Animated typing dots: solid BLACK dots, same size, bobbing UP and DOWN in a
+  // staggered wave (a travelling wave that loops) — no scaling, no fading.
+  const PERIOD = 11; // ~0.37s loop, measured from the reference
+  const AMP = 8;
+  const dotY = (i: number) => -AMP * Math.sin((frame / PERIOD) * 2 * Math.PI - i * ((2 * Math.PI) / 3));
   const typingStrip = typingName ? (
     <div
       style={{
@@ -36,11 +34,11 @@ export const Composer: React.FC<{
         borderBottom: `1px solid ${theme.hairline}`,
       }}
     >
-      <div style={{display: 'flex', alignItems: 'center', gap: 9, height: 18}}>
+      <div style={{display: 'flex', alignItems: 'center', gap: 9, height: 34}}>
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            style={{width: 14, height: 14, borderRadius: '50%', background: theme.ink, transform: `scale(${dotScale(i)})`}}
+            style={{width: 14, height: 14, borderRadius: '50%', background: theme.ink, transform: `translateY(${dotY(i)}px)`}}
           />
         ))}
       </div>
