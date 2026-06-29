@@ -14,33 +14,43 @@ export const Composer: React.FC<{
   sendActive: boolean;
   /** When a guest is typing, their name — shows "… {name} sta scrivendo" on top. */
   typingName?: string;
-}> = ({text, sendActive, typingName}) => {
+  /** Frame the guest's typing started — used for the strip's entrance. */
+  typingStartFrame?: number;
+}> = ({text, sendActive, typingName, typingStartFrame}) => {
   const frame = useCurrentFrame();
 
-  // Animated typing dots: solid BLACK dots, same size, bobbing UP and DOWN in a
-  // staggered travelling wave that loops — no scaling, no fading. Period and
-  // amplitude measured frame-by-frame from the reference (~1.1s loop, ~8px).
+  // Typing dots: small solid-BLACK dots bobbing up/down in a staggered travelling
+  // wave (no scale, no fade). Sizes/timing measured frame-by-frame from the
+  // reference: dot ⌀7px, gap 5px, ~7px peak-to-peak bob, ~1.1s loop.
   const PERIOD = 33; // ~1.1s loop at 30fps
-  const AMP = 8;
+  const AMP = 3.5; // 7px peak-to-peak
   const STAGGER = 1.2; // radians between adjacent dots (dot 0 leads)
   const dotY = (i: number) => -AMP * Math.sin((frame / PERIOD) * 2 * Math.PI - i * STAGGER);
+
+  // Entrance: the strip fades in and rises into place over ~0.3s (ease-out).
+  const ENTER = 10;
+  const eP = typingStartFrame == null ? 1 : Math.max(0, Math.min(1, (frame - typingStartFrame) / ENTER));
+  const eEase = 1 - Math.pow(1 - eP, 3);
+
   const typingStrip = typingName ? (
     <div
       style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 14,
-        paddingBottom: 18,
+        gap: 12,
+        paddingBottom: 16,
         marginBottom: 14,
         borderBottom: `1px solid ${theme.hairline}`,
+        opacity: eEase,
+        transform: `translateY(${(1 - eEase) * 14}px)`,
       }}
     >
-      <div style={{display: 'flex', alignItems: 'center', gap: 9, height: 34}}>
+      <div style={{display: 'flex', alignItems: 'center', gap: 5, height: 16}}>
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            style={{width: 14, height: 14, borderRadius: '50%', background: theme.ink, transform: `translateY(${dotY(i)}px)`}}
+            style={{width: 7, height: 7, borderRadius: '50%', background: theme.ink, transform: `translateY(${dotY(i)}px)`}}
           />
         ))}
       </div>

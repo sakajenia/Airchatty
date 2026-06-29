@@ -187,6 +187,7 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
             text={composerText}
             sendActive={sendActive}
             typingName={typing && typingPerson ? typingPerson.name : undefined}
+            typingStartFrame={typing && typing.kind === 'message' ? typing.typingStartFrame ?? undefined : undefined}
           />
           <Keyboard pressedKey={pressedKey} suggestions={suggestionsFor(composerText)} />
         </div>
