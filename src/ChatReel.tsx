@@ -204,13 +204,15 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
       {/* Meme outro: play the real clip (video + audio) full-frame, or fall back
           to the recreated credit text if no clip file is present. */}
       {oFrames > 0 && /\.(mp4|webm|mov)$/i.test(props.outro ?? '') ? (
-        <Sequence from={outroStart} durationInFrames={oFrames}>
-          <AbsoluteFill style={{background: '#000'}}>
+        <Sequence from={outroStart} durationInFrames={oFrames} layout="none">
+          <AbsoluteFill style={{background: '#000', zIndex: 999}}>
             <OffthreadVideo src={staticFile(props.outro as string)} style={{width: '100%', height: '100%', objectFit: 'contain'}} />
           </AbsoluteFill>
         </Sequence>
       ) : oFrames > 0 && props.outro === 'weide' && frame >= outroStart ? (
-        <WeideOutro progress={outroProgress} />
+        <AbsoluteFill style={{zIndex: 999}}>
+          <WeideOutro progress={outroProgress} />
+        </AbsoluteFill>
       ) : null}
     </AbsoluteFill>
   );
