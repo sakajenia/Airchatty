@@ -2,6 +2,8 @@ import React from 'react';
 import {
   AbsoluteFill,
   Audio,
+  Easing,
+  interpolate,
   OffthreadVideo,
   Sequence,
   staticFile,
@@ -14,7 +16,7 @@ import {theme, useClientHeight, useNaturalHeight} from './util';
 import {ChatHeader, StatusBar, HeaderAvatar} from './components/ChatHeader';
 import {InputBar} from './components/InputBar';
 import {Composer} from './components/Composer';
-import {Keyboard, keyForChar, suggestionsFor} from './components/Keyboard';
+import {Keyboard, keyForChar, suggestionsFor, KEYBOARD_HEIGHT} from './components/Keyboard';
 import {MessageBubble} from './components/MessageBubble';
 import {TypingIndicator} from './components/TypingIndicator';
 import {DateSeparator} from './components/DateSeparator';
@@ -111,7 +113,26 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
   const [areaRef, areaH] = useClientHeight();
   const [contentRef, contentH] = useNaturalHeight();
   const [overlayRef, overlayH] = useClientHeight();
-  const bottomInset = keyboard ? overlayH ?? 0 : 0;
+
+  // Keyboard entrance: it's hidden while messages arrive and slides up from the
+  // bottom (~0.25s, ease-out) just before the host first types — then stays up.
+  const firstHostKbStart = segments.reduce<number | null>((min, s) => {
+    if (s.kind !== 'message' || s.keyboardStartFrame == null) return min;
+    return min == null ? s.keyboardStartFrame : Math.min(min, s.keyboardStartFrame);
+  }, null);
+  const slideFrames = Math.round(fps * 0.26);
+  const kbAppearStart = firstHostKbStart == null ? null : firstHostKbStart - slideFrames - Math.round(fps * 0.12);
+  const kbUp =
+    kbAppearStart == null
+      ? 0
+      : interpolate(frame, [kbAppearStart, kbAppearStart + slideFrames], [0, 1], {
+          extrapolateLeft: 'clamp',
+          extrapolateRight: 'clamp',
+          easing: Easing.out(Easing.cubic),
+        });
+  const kbHidden = (1 - kbUp) * KEYBOARD_HEIGHT; // how far the overlay sits below
+
+  const bottomInset = keyboard ? Math.max(0, (overlayH ?? 0) - kbHidden) : 0;
   const scroll = areaH && contentH ? Math.max(0, contentH + 12 - areaH) : 0;
 
   return (
@@ -149,14 +170,6 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
                 />
               );
             })}
-            {typing && typing.kind === 'message' && typing.typingStartFrame != null && typingPerson && (
-              <TypingIndicator
-                startFrame={typing.typingStartFrame}
-                senderName={typingPerson.name}
-                avatarSrc={typingPerson.avatar}
-                isYou={typing.isYou}
-              />
-            )}
             {/* keeps the newest bubble above the overlaid composer + keyboard */}
             <div style={{height: bottomInset}} />
           </div>
@@ -166,8 +179,15 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
       </div>
 
       {keyboard && (
-        <div ref={overlayRef} style={{position: 'absolute', left: 0, right: 0, bottom: 0}}>
-          <Composer text={composerText} sendActive={sendActive} />
+        <div
+          ref={overlayRef}
+          style={{position: 'absolute', left: 0, right: 0, bottom: 0, transform: `translateY(${kbHidden}px)`}}
+        >
+          <Composer
+            text={composerText}
+            sendActive={sendActive}
+            typingName={typing && typingPerson ? typingPerson.name : undefined}
+          />
           <Keyboard pressedKey={pressedKey} suggestions={suggestionsFor(composerText)} />
         </div>
       )}

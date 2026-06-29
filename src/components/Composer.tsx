@@ -12,8 +12,37 @@ import {EmojiText} from './EmojiText';
 export const Composer: React.FC<{
   text: string;
   sendActive: boolean;
-}> = ({text, sendActive}) => {
+  /** When a guest is typing, their name — shows "… {name} sta scrivendo" on top. */
+  typingName?: string;
+}> = ({text, sendActive, typingName}) => {
   const frame = useCurrentFrame();
+
+  // Animated typing dots: a smooth staggered wave that loops, like the app.
+  const PERIOD = 42;
+  const dot = (i: number) => {
+    const s = (Math.sin((frame / PERIOD) * 2 * Math.PI - i * 0.9) + 1) / 2;
+    return {opacity: 0.3 + 0.7 * s, transform: `translateY(${-7 * s}px) scale(${0.8 + 0.3 * s})`};
+  };
+  const typingStrip = typingName ? (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 14,
+        paddingBottom: 18,
+        marginBottom: 14,
+        borderBottom: `1px solid ${theme.hairline}`,
+      }}
+    >
+      <div style={{display: 'flex', alignItems: 'flex-end', gap: 8, height: 22}}>
+        {[0, 1, 2].map((i) => (
+          <div key={i} style={{width: 16, height: 16, borderRadius: '50%', background: theme.ash, ...dot(i)}} />
+        ))}
+      </div>
+      <span style={{fontSize: 32, fontWeight: 500, color: theme.ash}}>{typingName} sta scrivendo…</span>
+    </div>
+  ) : null;
   // The field is always focused while the keyboard is up, so the caret blinks
   // even when empty (at the start, before the placeholder) — like the app.
   const caretOn = Math.floor(frame / 16) % 2 === 0;
@@ -49,6 +78,7 @@ export const Composer: React.FC<{
           background: theme.white,
         }}
       >
+        {typingStrip}
         <div style={{fontSize: 44, lineHeight: 1.35, color: theme.ink, minHeight: 56}}>
           {text ? (
             <span>
