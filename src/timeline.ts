@@ -261,7 +261,11 @@ export const buildTimeline = (
     let keyboardStartFrame: number | null = null;
     let keystrokes: Keystroke[] | null = null;
 
-    if (keyboard && isHost) {
+    // A message right after an interstitial has already "arrived" during the
+    // time-skip: show it instantly on the cut — no keyboard typing, no "…" dots.
+    const afterMeme = index > 0 && items[index - 1].type === 'interstitial';
+
+    if (keyboard && isHost && !afterMeme) {
       // Host types on the keyboard — optionally typing an "honest" draft first
       // and deleting it — then sends.
       frame += sec(isFirstOfGroup ? 0.55 : 0.25); // pick the phone up / think
@@ -271,14 +275,15 @@ export const buildTimeline = (
       keystrokes = plan.keystrokes;
       frame += plan.total;
       frame += sec(0.55); // re-read the finished message before sending
-    } else if (keyboard ? !isHost && animate : typingFor === 'both' || typingFor === item.sender) {
+    } else if (!afterMeme && (keyboard ? !isHost && animate : typingFor === 'both' || typingFor === item.sender)) {
       // Grey "…" dots (the other person), unless it's the instant first message.
       frame += sec(isFirstOfGroup ? 0.25 : 0.12);
       typingStartFrame = Math.round(frame);
       frame += item.photo ? sec(0.9) : sec(clamp(0.6 + chars * 0.02, 0.7, 2.3));
-    } else {
+    } else if (!afterMeme) {
       frame += sec(isFirstMessage ? 0.0 : clamp(0.35 + chars * 0.012, 0.35, 1.1));
     }
+    // afterMeme: no added delay — it reveals right at the cut, already on screen.
 
     const revealFrame = Math.round(frame);
     clock += 1;
