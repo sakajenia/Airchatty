@@ -17,11 +17,12 @@ export const Composer: React.FC<{
 }> = ({text, sendActive, typingName}) => {
   const frame = useCurrentFrame();
 
-  // Animated typing dots: a smooth staggered wave that loops, like the app.
-  const PERIOD = 42;
-  const dot = (i: number) => {
-    const s = (Math.sin((frame / PERIOD) * 2 * Math.PI - i * 0.9) + 1) / 2;
-    return {opacity: 0.3 + 0.7 * s, transform: `translateY(${-7 * s}px) scale(${0.8 + 0.3 * s})`};
+  // Animated typing dots: solid BLACK dots doing a subtle staggered SIZE wave
+  // (no fading, no bounce) — a continuous loop, matching the reference.
+  const PERIOD = 40;
+  const dotScale = (i: number) => {
+    const s = (Math.sin((frame / PERIOD) * 2 * Math.PI - i * ((2 * Math.PI) / 3)) + 1) / 2;
+    return 0.72 + 0.5 * s; // 0.72 … 1.22
   };
   const typingStrip = typingName ? (
     <div
@@ -35,9 +36,12 @@ export const Composer: React.FC<{
         borderBottom: `1px solid ${theme.hairline}`,
       }}
     >
-      <div style={{display: 'flex', alignItems: 'flex-end', gap: 8, height: 22}}>
+      <div style={{display: 'flex', alignItems: 'center', gap: 9, height: 18}}>
         {[0, 1, 2].map((i) => (
-          <div key={i} style={{width: 16, height: 16, borderRadius: '50%', background: theme.ash, ...dot(i)}} />
+          <div
+            key={i}
+            style={{width: 14, height: 14, borderRadius: '50%', background: theme.ink, transform: `scale(${dotScale(i)})`}}
+          />
         ))}
       </div>
       <span style={{fontSize: 32, fontWeight: 500, color: theme.ash}}>{typingName} sta scrivendo…</span>
