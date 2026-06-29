@@ -18,10 +18,12 @@ export const Composer: React.FC<{
   const frame = useCurrentFrame();
 
   // Animated typing dots: solid BLACK dots, same size, bobbing UP and DOWN in a
-  // staggered wave (a travelling wave that loops) — no scaling, no fading.
-  const PERIOD = 11; // ~0.37s loop, measured from the reference
+  // staggered travelling wave that loops — no scaling, no fading. Period and
+  // amplitude measured frame-by-frame from the reference (~1.1s loop, ~8px).
+  const PERIOD = 33; // ~1.1s loop at 30fps
   const AMP = 8;
-  const dotY = (i: number) => -AMP * Math.sin((frame / PERIOD) * 2 * Math.PI - i * ((2 * Math.PI) / 3));
+  const STAGGER = 1.2; // radians between adjacent dots (dot 0 leads)
+  const dotY = (i: number) => -AMP * Math.sin((frame / PERIOD) * 2 * Math.PI - i * STAGGER);
   const typingStrip = typingName ? (
     <div
       style={{
