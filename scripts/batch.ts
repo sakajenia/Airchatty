@@ -178,6 +178,7 @@ async function main() {
     foto: idx('foto', 'photo', 'immagine', 'image'),
     foto_pos: idx('foto_pos', 'posizione_foto', 'photo_pos', 'foto_posizione'),
     ora: idx('ora', 'orario', 'time', 'hour'),
+    finale: idx('finale', 'meme', 'outro', 'ending'),
   };
   if (cols.chat < 0) {
     console.error('  ✗ Manca la colonna "chat" (raggruppa i messaggi in un video).');
@@ -195,6 +196,7 @@ async function main() {
     foto: cell(row, cols.foto),
     foto_pos: cell(row, cols.foto_pos),
     ora: cell(row, cols.ora),
+    finale: cell(row, cols.finale),
   });
 
   // Group consecutive rows by `chat` (an empty chat inherits the previous one).
@@ -254,6 +256,13 @@ async function main() {
       continue;
     }
 
+    // Meme outro: if the `finale` column is set, play the real clip when
+    // public/outro.mp4 exists, otherwise fall back to the recreated credit.
+    const finale = firstWith('finale').toLowerCase();
+    const wantOutro = ['weide', 'curb', 'si', 'sì', 'yes', 'x', '1', 'true'].includes(finale);
+    const hasClip = fs.existsSync(path.join(ROOT, 'public', 'outro.mp4'));
+    const outro = wantOutro ? (hasClip ? 'outro.mp4' : 'weide') : '';
+
     const seed = g + 1;
     const props: ChatProps = {
       ...DEFAULT_PROPS,
@@ -263,6 +272,7 @@ async function main() {
       participants: makeParticipants(guests, seed),
       headerDate: pickDate(seed),
       headerApt: pickApartment(seed),
+      outro,
     };
 
     const outFile = path.join(outDir, `${outName}.mp4`);

@@ -48,6 +48,10 @@ export type Timeline = {
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
+/** Extra frames held at the end for a meme outro (freeze + credit + music). */
+export const outroFrames = (outro: string | undefined, fps: number): number =>
+  outro ? Math.round(fps * 2.0) : 0;
+
 /**
  * Build the keystroke plan for a message with human, non-linear rhythm:
  * per-key jitter, short "thinking" pauses at word/sentence boundaries, an

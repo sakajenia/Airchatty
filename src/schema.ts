@@ -63,6 +63,10 @@ export const chatPropsSchema = z.object({
   keyboard: z.boolean(),
   speed: z.number().min(0.3).max(3),
   sound: z.boolean(),
+  // Meme ending: '' (none) or 'weide' (Directed by Robert B. Weide freeze).
+  outro: z.string().optional(),
+  // Audio file (in public/) played during the outro, e.g. 'curb.mp3'.
+  outroMusic: z.string().optional(),
 });
 export type ChatProps = z.infer<typeof chatPropsSchema>;
 
@@ -116,6 +120,8 @@ export const DEFAULT_PROPS: ChatProps = {
   keyboard: true,
   speed: 1.4, // faster keyboard typing + snappier pacing
   sound: true,
+  outro: '',
+  outroMusic: '',
 };
 
 /** Resolve display info for a message's sender id from the props. */

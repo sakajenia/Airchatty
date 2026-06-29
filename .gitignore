@@ -5,3 +5,4 @@ out/
 .DS_Store
 service-account.json
 *.serviceaccount.json
+public/outro.mp4

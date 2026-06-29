@@ -2,13 +2,14 @@ import React from 'react';
 import {
   AbsoluteFill,
   Audio,
+  OffthreadVideo,
   Sequence,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
 import {ChatProps, personFor} from './schema';
-import {buildTimeline, composerStateAt, MessageSeg} from './timeline';
+import {buildTimeline, composerStateAt, MessageSeg, outroFrames} from './timeline';
 import {theme, useClientHeight, useNaturalHeight} from './util';
 import {ChatHeader, StatusBar, HeaderAvatar} from './components/ChatHeader';
 import {InputBar} from './components/InputBar';
@@ -17,12 +18,19 @@ import {Keyboard, keyForChar, suggestionsFor} from './components/Keyboard';
 import {MessageBubble} from './components/MessageBubble';
 import {TypingIndicator} from './components/TypingIndicator';
 import {DateSeparator} from './components/DateSeparator';
+import {WeideOutro} from './components/WeideOutro';
 
 export const ChatReel: React.FC<ChatProps> = (props) => {
   const {items, typingFor, keyboard, participants: people, headerDate, headerApt, speed, sound} = props;
   const frame = useCurrentFrame();
-  const {fps} = useVideoConfig();
+  const {fps, durationInFrames} = useVideoConfig();
   const {segments} = buildTimeline(items, {fps, speed, typingFor, keyboard});
+
+  // Meme outro: extra frames at the end where the chat freezes and the credit
+  // (+ music) fades in.
+  const oFrames = outroFrames(props.outro, fps);
+  const outroStart = durationInFrames - oFrames;
+  const outroProgress = oFrames > 0 ? Math.max(0, Math.min(1, (frame - outroStart) / oFrames)) : 0;
 
   // Header: the avatar cluster + names of the people you're chatting with, and
   // a "date · listing" subtitle that clips with an ellipsis when too long.
@@ -192,6 +200,18 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
           }
           return audios;
         })}
+
+      {/* Meme outro: play the real clip (video + audio) full-frame, or fall back
+          to the recreated credit text if no clip file is present. */}
+      {oFrames > 0 && /\.(mp4|webm|mov)$/i.test(props.outro ?? '') ? (
+        <Sequence from={outroStart} durationInFrames={oFrames}>
+          <AbsoluteFill style={{background: '#000'}}>
+            <OffthreadVideo src={staticFile(props.outro as string)} style={{width: '100%', height: '100%', objectFit: 'contain'}} />
+          </AbsoluteFill>
+        </Sequence>
+      ) : oFrames > 0 && props.outro === 'weide' && frame >= outroStart ? (
+        <WeideOutro progress={outroProgress} />
+      ) : null}
     </AbsoluteFill>
   );
 };

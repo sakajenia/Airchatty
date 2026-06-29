@@ -3,7 +3,7 @@ import {Composition, registerRoot} from 'remotion';
 import {ChatReel} from './ChatReel';
 import {Wireframe} from './Wireframe';
 import {chatPropsSchema, ChatProps, DEFAULT_PROPS, DEFAULT_ITEMS} from './schema';
-import {buildTimeline} from './timeline';
+import {buildTimeline, outroFrames} from './timeline';
 
 const FPS = 30;
 const WIDTH = 1080;
@@ -32,7 +32,12 @@ export const RemotionRoot: React.FC = () => {
           typingFor: props.typingFor,
           keyboard: props.keyboard,
         });
-        return {durationInFrames, fps: FPS, width: WIDTH, height: HEIGHT};
+        return {
+          durationInFrames: durationInFrames + outroFrames(props.outro, FPS),
+          fps: FPS,
+          width: WIDTH,
+          height: HEIGHT,
+        };
       }}
     />
   );
