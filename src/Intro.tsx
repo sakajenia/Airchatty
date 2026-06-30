@@ -90,7 +90,8 @@ export const IntroChat: React.FC<IntroChatProps> = (props) => {
           unlock, then revealed as the lock screen slides away */}
       <Sequence from={chatSeqStart} layout="none">
         <AbsoluteFill style={{transform: `scale(${chatScale})`, opacity: chatOpacity}}>
-          <ChatReel {...props} />
+          {/* same phone as the lock screen — battery/charge/signal carried over */}
+          <ChatReel {...props} status={{battery: intro.lock.battery, charging: intro.lock.charging, signal: intro.lock.signal}} />
         </AbsoluteFill>
       </Sequence>
 

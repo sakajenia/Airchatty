@@ -82,6 +82,7 @@ export type LockScreenData = {
   carrier: string;
   battery: number; // 1..100
   charging: boolean;
+  signal: number; // cellular strength, 1..4 bright bars
   wallpaper: string; // CSS background value
 };
 
@@ -108,8 +109,9 @@ export const lockScreenFor = (seed: string): LockScreenData => {
   // Keep it realistic (and the inside-percentage readable): a healthy charge.
   const battery = 62 + Math.floor(r() * 39); // 62..100
   const charging = r() < 0.45;
+  const signal = 3 + Math.floor(r() * 2); // 3..4 bright bars (good reception)
 
   const wallpaper = WALLPAPERS[Math.floor(r() * WALLPAPERS.length)];
 
-  return {time, dateLabel, carrier, battery, charging, wallpaper};
+  return {time, dateLabel, carrier, battery, charging, signal, wallpaper};
 };

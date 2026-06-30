@@ -22,11 +22,21 @@ import {TypingIndicator} from './components/TypingIndicator';
 import {DateSeparator} from './components/DateSeparator';
 import {WeideOutro} from './components/WeideOutro';
 
-export const ChatReel: React.FC<ChatProps> = (props) => {
-  const {items, typingFor, keyboard, participants: people, headerDate, headerApt, speed, sound} = props;
+/** Phone status-bar state, so the chat reads as the same handset as the intro's
+ *  lock screen. The time is the conversation's own time; battery/signal default
+ *  to a clean full-ish phone unless the intro threads the lock-screen values. */
+export type ChatStatus = {battery?: number; charging?: boolean; signal?: number};
+
+export const ChatReel: React.FC<ChatProps & {status?: ChatStatus}> = (props) => {
+  const {items, typingFor, keyboard, participants: people, headerDate, headerApt, speed, sound, status} = props;
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
   const {segments, durationInFrames: chatDur} = buildTimeline(items, {fps, speed, typingFor, keyboard});
+
+  // The status-bar clock = the conversation's time (the first message's label),
+  // so it agrees with the lock screen and the message timestamps.
+  const firstMsg = segments.find((s): s is MessageSeg => s.kind === 'message');
+  const statusTime = firstMsg?.timeLabel ?? '14:33';
 
   // Meme outro: extra frames at the end where the chat freezes and the credit
   // (+ music) fades in. Anchored to the chat's OWN length (not the composition
@@ -140,7 +150,12 @@ export const ChatReel: React.FC<ChatProps> = (props) => {
   return (
     <AbsoluteFill style={{background: theme.white, fontFamily: theme.font}}>
       <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
-        <StatusBar />
+        <StatusBar
+          time={statusTime}
+          battery={status?.battery ?? 86}
+          charging={status?.charging ?? false}
+          signal={status?.signal ?? 4}
+        />
         <ChatHeader title={headerTitle} subtitle={headerSubtitle} participants={cluster} />
 
         <div ref={areaRef} style={{flex: 1, overflow: 'hidden', position: 'relative'}}>

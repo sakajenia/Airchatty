@@ -1,9 +1,20 @@
 import React from 'react';
 import {theme} from '../util';
 import {Avatar} from './Avatar';
+import {StatusBarRight} from './StatusIcons';
 
-/** iPhone status bar with the Dynamic Island. */
-export const StatusBar: React.FC = () => (
+/**
+ * iPhone status bar with the Dynamic Island. The icons use the SAME official
+ * iOS 26 set as the lock screen (dark variant here, for the light chat), and
+ * the time / battery / signal are threaded through so the chat reads as the
+ * very same phone we just unlocked. The Dynamic Island is idle (no orange dot).
+ */
+export const StatusBar: React.FC<{
+  time: string;
+  battery: number;
+  charging: boolean;
+  signal: number;
+}> = ({time, battery, charging, signal}) => (
   <div
     style={{
       height: 104,
@@ -18,14 +29,14 @@ export const StatusBar: React.FC = () => (
   >
     {/* time + silenced bell */}
     <div style={{display: 'flex', alignItems: 'center', gap: 12, fontSize: 34, fontWeight: 600}}>
-      <span>13:37</span>
+      <span>{time}</span>
       <svg width="26" height="26" viewBox="0 0 24 24" fill={theme.ink}>
         <path d="M12 3a6 6 0 0 0-6 6v3.6l-1.5 2.4A1 1 0 0 0 5.3 17h13.4a1 1 0 0 0 .8-1.6L18 13V9a6 6 0 0 0-6-6zm0 17a2.4 2.4 0 0 0 2.3-1.8H9.7A2.4 2.4 0 0 0 12 20z" />
         <path d="M2 4l18 16" stroke={theme.ink} strokeWidth="1.6" />
       </svg>
     </div>
 
-    {/* Dynamic Island */}
+    {/* Dynamic Island — idle (front camera only, no activity dot) */}
     <div
       style={{
         position: 'absolute',
@@ -38,38 +49,15 @@ export const StatusBar: React.FC = () => (
         borderRadius: 40,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 24px',
+        justifyContent: 'flex-end',
+        padding: '0 26px',
       }}
     >
-      <div style={{width: 26, height: 26, borderRadius: 13, background: '#f5a623'}} />
-      <div style={{width: 18, height: 18, borderRadius: 9, background: '#1c1c1c'}} />
+      <div style={{width: 18, height: 18, borderRadius: 9, background: '#0c0c0e'}} />
     </div>
 
-    {/* signal · 5G · battery */}
-    <div style={{display: 'flex', alignItems: 'center', gap: 14}}>
-      <div style={{display: 'flex', alignItems: 'flex-end', gap: 5, height: 26}}>
-        {[12, 17, 22, 26].map((h, i) => (
-          <div key={i} style={{width: 7, height: h, background: theme.ink, borderRadius: 2}} />
-        ))}
-      </div>
-      <span style={{fontSize: 30, fontWeight: 600}}>5G</span>
-      <div
-        style={{
-          width: 50,
-          height: 26,
-          border: `2px solid ${theme.ink}`,
-          borderRadius: 7,
-          padding: 3,
-          position: 'relative',
-        }}
-      >
-        <div style={{width: '85%', height: '100%', background: theme.ink, borderRadius: 2}} />
-        <div
-          style={{position: 'absolute', right: -6, top: 8, width: 3, height: 10, background: theme.ink, borderRadius: 2}}
-        />
-      </div>
-    </div>
+    {/* cellular · wi-fi · battery — identical design to the lock screen */}
+    <StatusBarRight tone="dark" bars={signal} battery={battery} charging={charging} />
   </div>
 );
 

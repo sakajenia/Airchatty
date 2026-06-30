@@ -4,6 +4,7 @@ import {theme} from '../util';
 import {LockScreenData} from '../lockscreen';
 import {clockFont} from '../clockfont';
 import {uiFont} from '../uifont';
+import {StatusBarRight} from './StatusIcons';
 
 /**
  * iOS 26 "Liquid Glass" lock screen used as the video intro. The clock is real
@@ -19,97 +20,6 @@ const SF = `${uiFont}, -apple-system, "SF Pro Display", ${theme.font}`;
 const TOP_LABEL = 'ProProManager';
 
 /** The iOS charging bolt (solid white), as it sits inside the battery body. */
-const ChargeBolt: React.FC = () => (
-  <svg width="13" height="19" viewBox="0 0 10 15" style={{display: 'block', marginTop: -1}}>
-    <path
-      fill="#fff"
-      d="M5.62.32 0.42 8.06c-.22.33.02.77.42.77h2.4l-1.02 5.49c-.1.52.58.82.9.4l5.06-8.2c.2-.33-.04-.74-.43-.74H5.18L6.5.74c.13-.5-.55-.83-.88-.42Z"
-    />
-  </svg>
-);
-
-/**
- * Status-bar right cluster, redrawn to match the iOS 26 reference exactly:
- *  • cellular — four rounded bars, the strength shown by the two bright ones
- *    (the rest dimmed);
- *  • wi-fi — the solid white fan;
- *  • battery — the iOS 26 pill: a SOLID green body with the % and the charging
- *    bolt in white when charging, otherwise a translucent body with a white
- *    fill bar and a dark %, finished with the little terminal nub.
- */
-const StatusRight: React.FC<{battery: number; charging: boolean}> = ({battery, charging}) => {
-  const W = 60;
-  const H = 28;
-  const R = 9;
-  const pad = 2.5;
-  const fillW = Math.max(8, (Math.min(battery, 100) / 100) * (W - pad * 2));
-  return (
-    <div style={{display: 'flex', alignItems: 'center', gap: 16}}>
-      {/* cellular — 2 bright bars + 2 dimmed (signal strength) */}
-      <svg width="42" height="30" viewBox="0 0 42 30">
-        {[0, 1, 2, 3].map((i) => {
-          const h = 9 + i * 5.4;
-          return <rect key={i} x={i * 11} y={28 - h} width="8" height={h} rx="3" fill="#fff" opacity={i < 2 ? 1 : 0.4} />;
-        })}
-      </svg>
-      {/* wi-fi — solid fan */}
-      <svg width="40" height="29" viewBox="0 0 30 22" fill="#fff">
-        <path d="M15 4.3c4.3 0 8.2 1.7 11 4.5a1.4 1.4 0 0 1 0 2l-.4.4a1.3 1.3 0 0 1-1.85.02A12.4 12.4 0 0 0 15 7.7 12.4 12.4 0 0 0 6.25 11.2 1.3 1.3 0 0 1 4.4 11.2L4 10.8a1.4 1.4 0 0 1 0-2A15.6 15.6 0 0 1 15 4.3z" />
-        <path d="M15 10.4c2.6 0 5 1 6.8 2.8a1.35 1.35 0 0 1-.02 1.95l-.43.42a1.25 1.25 0 0 1-1.77-.02A6.45 6.45 0 0 0 15 13.7a6.45 6.45 0 0 0-4.58 1.85 1.25 1.25 0 0 1-1.77.02l-.43-.42A1.35 1.35 0 0 1 8.2 13.2 9.6 9.6 0 0 1 15 10.4z" />
-        <path d="M15 16.1c1.05 0 2.02.42 2.72 1.12a1.3 1.3 0 0 1 .03 1.8l-1.78 1.86a1.32 1.32 0 0 1-1.94 0l-1.78-1.86a1.3 1.3 0 0 1 .03-1.8A3.83 3.83 0 0 1 15 16.1z" />
-      </svg>
-      {/* battery */}
-      <div style={{display: 'flex', alignItems: 'center'}}>
-        <div
-          style={{
-            position: 'relative',
-            width: W,
-            height: H,
-            borderRadius: R,
-            boxSizing: 'border-box',
-            background: charging ? '#34c759' : 'rgba(255,255,255,0.16)',
-            border: charging ? 'none' : '2px solid rgba(255,255,255,0.55)',
-          }}
-        >
-          {!charging && (
-            <div
-              style={{
-                position: 'absolute',
-                left: pad,
-                top: pad,
-                bottom: pad,
-                width: fillW,
-                borderRadius: R - 3.5,
-                background: battery <= 20 ? '#ff453a' : '#fff',
-              }}
-            />
-          )}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 2,
-              fontFamily: SF,
-              fontSize: battery >= 100 ? 16 : 19.5,
-              fontWeight: 700,
-              letterSpacing: -1.2,
-              color: charging ? '#fff' : '#0b0b0d',
-            }}
-          >
-            <span>{battery}</span>
-            {charging && <ChargeBolt />}
-          </div>
-        </div>
-        {/* terminal nub */}
-        <div style={{width: 3.5, height: 10, borderRadius: 2, background: 'rgba(255,255,255,0.5)', marginLeft: 2.5}} />
-      </div>
-    </div>
-  );
-};
-
 // ── Liquid-Glass clock ──────────────────────────────────────────────────────
 // Real refraction, the way Apple does it (and the kube.io / dashersw technique):
 // build a DISPLACEMENT MAP from the digit shapes — a normal map whose R/G channels
@@ -260,7 +170,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
         }}
       >
         <span style={{fontFamily: SF, fontSize: 34, fontWeight: 600, letterSpacing: 0.2}}>{data.carrier}</span>
-        <StatusRight battery={data.battery} charging={data.charging} />
+        <StatusBarRight tone="light" bars={data.signal} battery={data.battery} charging={data.charging} />
       </div>
 
       {/* date + glass clock + notification, stacked from the top */}
