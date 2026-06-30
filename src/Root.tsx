@@ -8,6 +8,8 @@ import {LockScreen} from './components/LockScreen';
 import {lockScreenFor} from './lockscreen';
 import {IntroDisclaimer} from './components/IntroDisclaimer';
 import {INTRO_DISCLAIMERS} from './introDisclaimers';
+import {IntroChat, IntroChatProps, prepareIntroChat, introChatDuration} from './Intro';
+import {pickDisclaimer} from './introDisclaimers';
 
 const FPS = 30;
 const WIDTH = 1080;
@@ -16,6 +18,21 @@ const HEIGHT = 1920;
 const defaultProps: ChatProps = {
   ...DEFAULT_PROPS,
   items: DEFAULT_ITEMS,
+};
+
+/** Default props for the full intro→chat composition (the lock-screen reveal). */
+const introChatProps: IntroChatProps = {
+  ...defaultProps,
+  intro: {
+    disclaimer: pickDisclaimer('demo'),
+    lock: {...lockScreenFor('demo'), wallpaper: 'wallpapers/rome.jpg'},
+    // these are derived from the chat in calculateMetadata — just fallbacks here
+    guestName: 'Giulia',
+    guestSubtitle: 'Villa a Roma',
+    guestPhoto: 'faces/face2.jpg',
+    message: '',
+    markerSec: 1.44,
+  },
 };
 
 export const RemotionRoot: React.FC = () => {
@@ -73,6 +90,25 @@ export const RootWithWireframe: React.FC = () => (
         guestSubtitle: 'Co-host on 10 listings',
         guestPhoto: 'faces/face2.jpg',
         message: 'Hi',
+      }}
+    />
+    <Composition
+      id="IntroChat"
+      component={IntroChat}
+      fps={FPS}
+      width={WIDTH}
+      height={HEIGHT}
+      durationInFrames={900}
+      defaultProps={introChatProps as never}
+      calculateMetadata={({props}) => {
+        const prepared = prepareIntroChat(props as IntroChatProps, FPS);
+        return {
+          durationInFrames: introChatDuration(prepared, FPS),
+          props: prepared,
+          fps: FPS,
+          width: WIDTH,
+          height: HEIGHT,
+        };
       }}
     />
   </>
