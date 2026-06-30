@@ -259,10 +259,10 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
           style={{
             position: 'relative',
             overflow: 'hidden',
-            borderRadius: 44,
+            borderRadius: 34,
             background: 'rgba(255,255,255,0.12)',
-            backdropFilter: 'blur(1px) url(#lg-filter) blur(2px) saturate(1.6) brightness(1.12) contrast(1.04)',
-            WebkitBackdropFilter: 'blur(8px) saturate(1.8) brightness(1.15) contrast(1.05)',
+            backdropFilter: 'blur(3px) url(#lg-filter) blur(18px) saturate(1.7) brightness(1.12) contrast(1.04)',
+            WebkitBackdropFilter: 'blur(22px) saturate(1.8) brightness(1.15) contrast(1.05)',
             boxShadow:
               'inset 0 0 0 1px rgba(255,255,255,0.15), inset 1.5px 1.5px 0 rgba(255,255,255,0.5), inset 0 0 12px rgba(255,255,255,0.2), 0 8px 32px rgba(0,0,0,0.2)',
             padding: '28px 32px',
