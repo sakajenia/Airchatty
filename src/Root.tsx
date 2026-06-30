@@ -6,6 +6,8 @@ import {chatPropsSchema, ChatProps, DEFAULT_PROPS, DEFAULT_ITEMS} from './schema
 import {buildTimeline, outroFrames} from './timeline';
 import {LockScreen} from './components/LockScreen';
 import {lockScreenFor} from './lockscreen';
+import {IntroDisclaimer} from './components/IntroDisclaimer';
+import {INTRO_DISCLAIMERS} from './introDisclaimers';
 
 const FPS = 30;
 const WIDTH = 1080;
@@ -49,6 +51,15 @@ export const RootWithWireframe: React.FC = () => (
   <>
     <RemotionRoot />
     <Composition id="HeaderWireframe" component={Wireframe} fps={30} width={1080} height={940} durationInFrames={1} />
+    <Composition
+      id="IntroDisclaimer"
+      component={IntroDisclaimer}
+      fps={FPS}
+      width={WIDTH}
+      height={HEIGHT}
+      durationInFrames={150}
+      defaultProps={{text: INTRO_DISCLAIMERS[0]}}
+    />
     <Composition
       id="LockScreen"
       component={LockScreen}
