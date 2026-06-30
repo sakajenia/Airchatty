@@ -216,49 +216,42 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
   return (
     <div style={{width: CLOCK_W, height: H, position: 'relative'}}>
       <svg width="0" height="0" style={{position: 'absolute'}} aria-hidden>
-        {/* (1) subtle refraction of the wallpaper through the glass */}
+        {/* (1) the glass body: refract + blur + saturate the wallpaper (the
+            translucent, frosted "see-through" part of glassmorphism) */}
         <filter id={`${fid}r`} x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
           <feImage href={dispUrl} x="0" y="0" width={CLOCK_W} height={CLOCK_H0} preserveAspectRatio="none" result="nmap" />
-          <feDisplacementMap in="SourceGraphic" in2="nmap" scale="11" xChannelSelector="R" yChannelSelector="G" result="refr" />
-          <feGaussianBlur in="refr" stdDeviation="2.5" />
+          <feDisplacementMap in="SourceGraphic" in2="nmap" scale="16" xChannelSelector="R" yChannelSelector="G" result="refr" />
+          <feGaussianBlur in="refr" stdDeviation="4" />
         </filter>
-        {/* (2) the SOLID glass rod itself: a 3-D lit cylinder from the height map
-            (diffuse body + specular glint), filled edge-to-edge — no hard rim */}
+        {/* (2) broad specular highlight along the curved rod surface — the bright
+            cylinder sheen, kept translucent (screen-blended over the body) */}
         <filter id={`${fid}l`} x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
           <feImage href={heightUrl} x="0" y="0" width={CLOCK_W} height={CLOCK_H0} preserveAspectRatio="none" result="h0" />
-          {/* smooth the bump so the cylinder shading is soft (no banding) */}
-          <feGaussianBlur in="h0" stdDeviation="3" result="h" />
-          {/* gentle diffuse body — soft frosted cylinder, not chrome */}
-          <feDiffuseLighting in="h" surfaceScale="11" diffuseConstant="1.0" lightingColor="#f3f6fc" result="diff">
-            <feDistantLight azimuth="238" elevation="55" />
-          </feDiffuseLighting>
-          {/* subtle, tight specular glint */}
-          <feSpecularLighting in="h" surfaceScale="11" specularConstant="0.75" specularExponent="30" lightingColor="#ffffff" result="spec">
-            <feDistantLight azimuth="238" elevation="62" />
+          <feGaussianBlur in="h0" stdDeviation="5" result="h" />
+          <feSpecularLighting in="h" surfaceScale="13" specularConstant="1.25" specularExponent="9" lightingColor="#ffffff" result="spec">
+            <feDistantLight azimuth="235" elevation="58" />
           </feSpecularLighting>
-          <feComposite in="spec" in2="diff" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="lit" />
-          <feComposite in="lit" in2="h0" operator="in" />
+          <feComposite in="spec" in2="h0" operator="in" />
         </filter>
       </svg>
 
       {/* stretch everything together so mask + maps stay aligned */}
       <div style={{position: 'absolute', inset: 0, transform: `scaleY(${CLOCK_SY})`, transformOrigin: 'center top'}}>
         <div style={{position: 'relative', width: CLOCK_W, height: CLOCK_H0}}>
-          {/* refracted wallpaper seen through the glass (the see-through) */}
+          {/* translucent frosted body — refracted + blurred wallpaper */}
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              backdropFilter: `url(#${fid}r) blur(3px)`,
-              WebkitBackdropFilter: `url(#${fid}r) blur(3px)`,
+              backdropFilter: `url(#${fid}r) blur(6px) brightness(1.12) saturate(1.3)`,
+              WebkitBackdropFilter: `url(#${fid}r) blur(6px) brightness(1.12) saturate(1.3)`,
               ...maskProps,
             }}
           />
-          {/* a milky frosted base so the rod stays soft light glass on any wallpaper */}
-          <div style={{position: 'absolute', inset: 0, background: 'rgba(245,248,253,0.44)', ...maskProps}} />
-          {/* the solid lit glass rod — soft cylinder shading + glint, clipped to
-              the digit shape; rounded edges come from the lighting, not a rim */}
-          <svg width={CLOCK_W} height={CLOCK_H0} style={{position: 'absolute', inset: 0, opacity: 0.8, ...maskProps}}>
+          {/* a subtle milky tint (glassmorphism) — keeps it light but translucent */}
+          <div style={{position: 'absolute', inset: 0, background: 'rgba(245,248,253,0.17)', ...maskProps}} />
+          {/* broad specular cylinder sheen (screen) — the bright curved highlight */}
+          <svg width={CLOCK_W} height={CLOCK_H0} style={{position: 'absolute', inset: 0, opacity: 0.9, mixBlendMode: 'screen', ...maskProps}}>
             <rect width={CLOCK_W} height={CLOCK_H0} filter={`url(#${fid}l)`} />
           </svg>
         </div>
