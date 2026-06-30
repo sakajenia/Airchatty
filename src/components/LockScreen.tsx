@@ -97,11 +97,14 @@ const StatusRight: React.FC<{battery: number; charging: boolean}> = ({battery, c
 // physically warped *through* the glass. A thin bright rim + a soft specular
 // highlight finish it. No fake bevel / text-shadow.
 
-const CLOCK_FS = 360; // glyph size (sets WIDTH so 22:06 fits the screen)
-const CLOCK_SY = 2.45; // strong vertical stretch → the tall iOS lock clock (~33% of screen)
-const CLOCK_LS = -8; // letter spacing
-const CLOCK_WT = 700; // SF Pro Display Bold → thick glass rods
-const CLOCK_H0 = 340; // unstretched box height (digit cap-height fits)
+// The reference uses SF Pro COMPRESSED Medium (naturally tall + narrow), so the
+// font is NOT stretched. Until that exact font file is available we render with
+// SF Pro Display Medium un-stretched as a placeholder.
+const CLOCK_FS = 380; // glyph size
+const CLOCK_SY = 1.0; // NO stretch — the font itself is compressed
+const CLOCK_LS = -4; // letter spacing
+const CLOCK_WT = 500; // Medium
+const CLOCK_H0 = 320; // box height (digit cap-height fits)
 const CLOCK_W = 1080;
 
 /**
@@ -126,22 +129,70 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
     maskPosition: 'center',
   };
 
+  const fid = `clk_${time.replace(/\D/g, '')}`;
   return (
     <div style={{width: CLOCK_W, height: H, position: 'relative'}}>
       <div style={{position: 'absolute', inset: 0, transform: `scaleY(${CLOCK_SY})`, transformOrigin: 'center top'}}>
         <div style={{position: 'relative', width: CLOCK_W, height: CLOCK_H0}}>
-          {/* simple frosted glass: blur the wallpaper behind + a high-opacity
-              light fill, clipped to the digits */}
+          {/* Glassmorphism per the provided card spec, adapted to the digits:
+              backdrop-filter blur(9px) + background rgba(255,255,255,0.14). */}
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              backdropFilter: 'blur(30px) saturate(1.25) brightness(1.04)',
-              WebkitBackdropFilter: 'blur(30px) saturate(1.25) brightness(1.04)',
-              background: 'rgba(250,251,255,0.55)',
+              backdropFilter: 'blur(9px)',
+              WebkitBackdropFilter: 'blur(9px)',
+              background: 'rgba(255,255,255,0.14)',
               ...maskProps,
             }}
           />
+          {/* border (1px rgba(255,255,255,0.3)) + the strong inner white glow
+              (inset 0 0 28px 14px rgba(255,255,255,1.4)) + top/bottom inset edges */}
+          <svg width={CLOCK_W} height={CLOCK_H0} style={{position: 'absolute', inset: 0, overflow: 'visible'}}>
+            <defs>
+              <filter id={fid} x="-15%" y="-15%" width="130%" height="130%" colorInterpolationFilters="sRGB">
+                <feFlood floodColor="#ffffff" floodOpacity="1" result="w" />
+                <feComposite in="w" in2="SourceAlpha" operator="out" result="outside" />
+                <feGaussianBlur in="outside" stdDeviation="13" result="b" />
+                <feComposite in="b" in2="SourceAlpha" operator="in" result="glow" />
+                <feMerge>
+                  <feMergeNode in="glow" />
+                  <feMergeNode in="glow" />
+                </feMerge>
+              </filter>
+            </defs>
+            {/* the bright inner glow, clipped to the digits */}
+            <text
+              x={CLOCK_W / 2}
+              y={CLOCK_H0 / 2 + 4}
+              fontFamily={clockFont}
+              fontWeight={CLOCK_WT}
+              fontSize={CLOCK_FS}
+              letterSpacing={CLOCK_LS}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="#ffffff"
+              filter={`url(#${fid})`}
+            >
+              {time}
+            </text>
+            {/* the 1px white border (glass edge) */}
+            <text
+              x={CLOCK_W / 2}
+              y={CLOCK_H0 / 2 + 4}
+              fontFamily={clockFont}
+              fontWeight={CLOCK_WT}
+              fontSize={CLOCK_FS}
+              letterSpacing={CLOCK_LS}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="none"
+              stroke="rgba(255,255,255,0.45)"
+              strokeWidth="1.4"
+            >
+              {time}
+            </text>
+          </svg>
         </div>
       </div>
     </div>
@@ -187,7 +238,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
       </div>
 
       {/* date + glass clock + notification, stacked from the top */}
-      <div style={{position: 'absolute', top: 150, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+      <div style={{position: 'absolute', top: 196, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
         <span style={{fontFamily: SF, fontSize: 40, fontWeight: 600, color: 'rgba(255,255,255,0.95)', letterSpacing: 0.3, marginBottom: 2}}>{TOP_LABEL}</span>
         <GlassClock time={data.time} />
 
