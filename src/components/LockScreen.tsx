@@ -205,11 +205,31 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
           }}
         >
           <div style={{position: 'relative', flexShrink: 0, width: 96, height: 96}}>
-            <img
-              src={resolveSrc(guestPhoto)}
-              style={{width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', display: 'block'}}
-              alt=""
-            />
+            {guestPhoto ? (
+              <img
+                src={resolveSrc(guestPhoto)}
+                style={{width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', display: 'block'}}
+                alt=""
+              />
+            ) : (
+              <div
+                style={{
+                  width: 96,
+                  height: 96,
+                  borderRadius: '50%',
+                  background: '#c9ccd1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#fff',
+                  fontSize: 46,
+                  fontWeight: 600,
+                  fontFamily: SF,
+                }}
+              >
+                {(guestName || '?').trim().charAt(0).toUpperCase()}
+              </div>
+            )}
             {/* the real Airbnb app tile (vectorlogo.zone), 46×46 */}
             <svg
               width={46}

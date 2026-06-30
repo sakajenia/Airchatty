@@ -29,6 +29,36 @@ import {selectComposition, renderMedia} from '@remotion/renderer';
 import {ChatProps, ChatItem, DEFAULT_PROPS} from '../src/schema';
 import {makeParticipants, pickApartment, pickDate} from '../src/avatars';
 import {findEmojis, emojiCode} from '../src/emoji';
+import {IntroChatProps} from '../src/Intro';
+import {lockScreenFor, WALLPAPERS} from '../src/lockscreen';
+import {pickDisclaimer} from '../src/introDisclaimers';
+
+/** Seconds into notify-intro.wav where the cue cuts from black to the lock screen. */
+const INTRO_MARKER_SEC = 1.44;
+
+/**
+ * Pick a lock-screen wallpaper for a video: any image in public/wallpapers/ plus
+ * the built-in gradients, chosen deterministically from the seed so each video
+ * differs but always renders the same.
+ */
+function pickWallpaper(seed: string): string {
+  let imgs: string[] = [];
+  try {
+    imgs = fs
+      .readdirSync(path.join(ROOT, 'public', 'wallpapers'))
+      .filter((f) => /\.(jpe?g|png|webp)$/i.test(f))
+      .map((f) => `wallpapers/${f}`);
+  } catch {
+    /* none yet */
+  }
+  const pool = [...imgs, ...WALLPAPERS];
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return pool[h % pool.length] || WALLPAPERS[0];
+}
 
 /** Download the Twemoji SVG for every emoji used so they render in full colour. */
 function ensureTwemoji(text: string) {
@@ -298,6 +328,24 @@ async function main() {
       outro,
     };
 
+    // Wrap the chat in the full intro → lock-screen → unlock animation. The
+    // disclaimer + lock-screen state are deterministic per video (seeded by its
+    // name), and calculateMetadata (prepareIntroChat) fills the lock-screen
+    // clock + Airbnb push from the first guest message — so the lock-screen time
+    // always matches the conversation.
+    const introProps: IntroChatProps = {
+      ...props,
+      intro: {
+        disclaimer: pickDisclaimer(outName),
+        lock: {...lockScreenFor(outName), wallpaper: pickWallpaper(outName)},
+        guestName: '',
+        guestSubtitle: '',
+        guestPhoto: '',
+        message: '',
+        markerSec: INTRO_MARKER_SEC,
+      },
+    };
+
     const outFile = path.join(outDir, `${outName}.mp4`);
     console.log(`  [${g + 1}/${groups.length}] render → out/${outName}.mp4`);
     // Render with retries and continue past failures — Remotion's headless
@@ -306,13 +354,13 @@ async function main() {
     let ok = false;
     for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
       try {
-        const composition = await selectComposition({serveUrl, id: 'ChatReel', inputProps: props});
+        const composition = await selectComposition({serveUrl, id: 'IntroChat', inputProps: introProps});
         await renderMedia({
           composition,
           serveUrl,
           codec: 'h264',
           outputLocation: outFile,
-          inputProps: props,
+          inputProps: introProps,
           concurrency: 1, // most stable on small/limited hosts
           timeoutInMilliseconds: 180000,
         });
