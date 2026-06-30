@@ -25,13 +25,15 @@ import {WeideOutro} from './components/WeideOutro';
 export const ChatReel: React.FC<ChatProps> = (props) => {
   const {items, typingFor, keyboard, participants: people, headerDate, headerApt, speed, sound} = props;
   const frame = useCurrentFrame();
-  const {fps, durationInFrames} = useVideoConfig();
-  const {segments} = buildTimeline(items, {fps, speed, typingFor, keyboard});
+  const {fps} = useVideoConfig();
+  const {segments, durationInFrames: chatDur} = buildTimeline(items, {fps, speed, typingFor, keyboard});
 
   // Meme outro: extra frames at the end where the chat freezes and the credit
-  // (+ music) fades in.
+  // (+ music) fades in. Anchored to the chat's OWN length (not the composition
+  // duration) so it stays correct when the chat is mounted at an offset — e.g.
+  // inside the intro→chat composition, after the lock-screen unlock.
   const oFrames = outroFrames(props.outro, fps);
-  const outroStart = durationInFrames - oFrames;
+  const outroStart = chatDur;
   const outroProgress = oFrames > 0 ? Math.max(0, Math.min(1, (frame - outroStart) / oFrames)) : 0;
 
   // Header: the avatar cluster + names of the people you're chatting with, and

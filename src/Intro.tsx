@@ -44,11 +44,11 @@ export const IntroChat: React.FC<IntroChatProps> = (props) => {
   const {intro} = props;
   const {fps, height} = useVideoConfig();
   const frame = useCurrentFrame();
-  const {marker, unlock, fade, unlockStart, chatStart} = introTiming(fps, intro.markerSec);
+  const {marker, unlock, unlockStart, chatStart} = introTiming(fps, intro.markerSec);
 
-  // black + disclaimer fades in, then crossfades to the lock screen at the marker
+  // The disclaimer text gently fades in over the black. The cut to the lock
+  // screen at the marker is HARD — no dissolve (per the brief).
   const textIn = interpolate(frame, [0, Math.round(fps * 0.4)], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
-  const lockIn = interpolate(frame, [marker, marker + fade], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
 
   // unlock: lock screen slides up + fades; the chat zooms from 1.06 → 1.0 + fades in
   const up = interpolate(frame, [unlockStart, unlockStart + unlock], [0, 1], {
@@ -64,15 +64,31 @@ export const IntroChat: React.FC<IntroChatProps> = (props) => {
     extrapolateRight: 'clamp',
   });
 
+  // The first message has "already arrived" (it's the notification), so the chat
+  // must be revealed with it already on screen — no entrance animation. We mount
+  // the (hidden) chat early enough that, by the unlock, its first bubble has
+  // appeared and settled. The pre-roll is invisible: it's behind the opaque lock
+  // screen and under chatOpacity=0 until the unlock begins.
+  const {segments} = buildTimeline(props.items, {
+    fps,
+    speed: props.speed,
+    typingFor: props.typingFor,
+    keyboard: props.keyboard,
+  });
+  const firstReveal = (segments.find((s) => s.kind === 'message') as MessageSeg | undefined)?.revealFrame ?? 0;
+  const settle = Math.round(fps * 0.7);
+  const chatSeqStart = Math.max(0, chatStart - firstReveal - settle);
+
   const showLock = frame >= marker && frame < unlockStart + unlock;
-  const showBlack = frame < marker + fade;
+  const showBlack = frame < marker; // hard cut: black is gone the instant the lock appears
 
   return (
     <AbsoluteFill style={{background: '#000'}}>
       <Audio src={staticFile('notify-intro.wav')} />
 
-      {/* the chat, revealed by the unlock */}
-      <Sequence from={chatStart} layout="none">
+      {/* the chat — mounted early (hidden) so its first bubble is settled by the
+          unlock, then revealed as the lock screen slides away */}
+      <Sequence from={chatSeqStart} layout="none">
         <AbsoluteFill style={{transform: `scale(${chatScale})`, opacity: chatOpacity}}>
           <ChatReel {...props} />
         </AbsoluteFill>
@@ -91,9 +107,9 @@ export const IntroChat: React.FC<IntroChatProps> = (props) => {
         </AbsoluteFill>
       )}
 
-      {/* black disclaimer card on top, until the marker */}
+      {/* black disclaimer card on top, until the (hard) cut at the marker */}
       {showBlack && (
-        <AbsoluteFill style={{background: '#000', opacity: 1 - lockIn, alignItems: 'center', justifyContent: 'center'}}>
+        <AbsoluteFill style={{background: '#000', alignItems: 'center', justifyContent: 'center'}}>
           <div
             style={{
               maxWidth: 820,

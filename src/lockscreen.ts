@@ -105,8 +105,9 @@ export const lockScreenFor = (seed: string): LockScreenData => {
   const dateLabel = `${WEEKDAYS[dayOfWeek(year, month, day)]} ${day} ${MONTHS[month - 1]}`;
 
   const carrier = IT_CARRIERS[Math.floor(r() * IT_CARRIERS.length)];
-  const battery = 1 + Math.floor(r() * 100);
-  const charging = r() < 0.35;
+  // Keep it realistic (and the inside-percentage readable): a healthy charge.
+  const battery = 62 + Math.floor(r() * 39); // 62..100
+  const charging = r() < 0.45;
 
   const wallpaper = WALLPAPERS[Math.floor(r() * WALLPAPERS.length)];
 
