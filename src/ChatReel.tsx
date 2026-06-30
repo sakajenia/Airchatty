@@ -16,7 +16,7 @@ import {theme, useClientHeight, useNaturalHeight} from './util';
 import {ChatHeader, StatusBar, HeaderAvatar} from './components/ChatHeader';
 import {InputBar} from './components/InputBar';
 import {Composer} from './components/Composer';
-import {Keyboard, keyForChar, suggestionsFor, KEYBOARD_HEIGHT} from './components/Keyboard';
+import {Keyboard, keyForChar, layoutForChar, suggestionsFor, KEYBOARD_HEIGHT, KbMode} from './components/Keyboard';
 import {MessageBubble} from './components/MessageBubble';
 import {TypingIndicator} from './components/TypingIndicator';
 import {DateSeparator} from './components/DateSeparator';
@@ -67,6 +67,7 @@ export const ChatReel: React.FC<ChatProps & {status?: ChatStatus}> = (props) => 
   // Keyboard mode: figure out what the host is currently typing into the field.
   let composerText = '';
   let pressedKey: string | null = null;
+  let kbMode: KbMode = 'letters';
   let sendActive = false;
   if (keyboard) {
     const active = segments.find(
@@ -80,6 +81,8 @@ export const ChatReel: React.FC<ChatProps & {status?: ChatStatus}> = (props) => 
       const state = composerStateAt(active, frame);
       composerText = state.text;
       pressedKey = keyForChar(state.pressedChar);
+      // show the "123" pad while typing digits (held by the last char), else letters
+      kbMode = layoutForChar(state.pressedChar ?? composerText.slice(-1));
       sendActive = composerText.length > 0;
     }
   }
@@ -206,7 +209,7 @@ export const ChatReel: React.FC<ChatProps & {status?: ChatStatus}> = (props) => 
             typingName={typing && typingPerson ? typingPerson.name : undefined}
             typingStartFrame={typing && typing.kind === 'message' ? typing.typingStartFrame ?? undefined : undefined}
           />
-          <Keyboard pressedKey={pressedKey} suggestions={suggestionsFor(composerText)} />
+          <Keyboard pressedKey={pressedKey} suggestions={suggestionsFor(composerText)} mode={kbMode} />
         </div>
       )}
 

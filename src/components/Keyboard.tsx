@@ -1,174 +1,231 @@
 import React from 'react';
 import {theme} from '../util';
+import {uiFont} from '../uifont';
+import {KB_GLYPHS} from './kbGlyphs';
 
 /**
- * iOS 26 "Liquid Glass" keyboard, sized to match the reference: bright white
- * rounded keys on a frosted translucent panel with rounded top corners. The
- * pressed letter shows the pop-up preview balloon. `suggestions` fills the
- * predictive bar.
+ * iOS 27 on-screen keyboard, rebuilt to the official Figma kit (iOS/iPadOS 27
+ * Community) at exact proportions. The iPhone screen is 402pt wide and our canvas
+ * is 1080px, so every measurement is the Figma point value × (1080/402).
+ *
+ * Three layouts the chat actually uses: QWERTY letters, the "123" number/symbol
+ * pad and the "#+=" symbols pad. Special keys (⇧ ⌫ ↵ 🌐 mic) use the exact glyph
+ * vectors exported from the same file (see kbGlyphs.ts).
  */
-const ROW1 = 'qwertyuiop'.split('');
-const ROW2 = 'asdfghjkl'.split('');
-const ROW3 = 'zxcvbnm'.split('');
 
-const KEY = 'rgba(255,255,255,0.96)';
-const KEY_SHADOW = '0 2px 5px rgba(0,0,0,0.16)';
-const KEY_H = 116;
+const S = 1080 / 402; // pt → px
+const px = (pt: number) => pt * S;
+
+const KEY_H = px(43);
+const KEY_R = px(8.5);
+const ROW_GAP = px(11);
+const KEY_GAP = px(6);
+const KEYS_PAD = px(6.67);
+const TOP_R = px(27);
+const TOP_PAD = px(24);
+const SUGG_H = px(25);
+const ROW2_PAD = px(20); // inset that centres a–l under q–p
+const SIDE_W = px(45); // shift / delete
+const MODE_W = px(50); // #+= / 123 toggle on the symbol rows
+const WIDE_W = px(92.667); // 123 / ABC
+const RET_W = px(93); // return
+const ROW3_GAP = px(13.333);
+const LETTER_FS = px(25);
+const FUNC_FS = px(17.5);
+
+export const KEYBOARD_HEIGHT = Math.round(TOP_PAD + SUGG_H + (KEY_H * 4 + ROW_GAP * 3) + px(75.8));
+
+export type KbMode = 'letters' | 'numbers' | 'symbols';
+
+const LETTERS = [
+  'qwertyuiop'.split(''),
+  'asdfghjkl'.split(''),
+  'zxcvbnm'.split(''),
+];
+const NUMBERS = [
+  '1234567890'.split(''),
+  ['-', '/', ':', ';', '(', ')', '$', '&', '@', '"'],
+  ['.', ',', '?', '!', "'"],
+];
+const SYMBOLS = [
+  ['[', ']', '{', '}', '#', '%', '^', '*', '+', '='],
+  ['_', '\\', '|', '~', '<', '>', '€', '£', '¥', '•'],
+  ['.', ',', '?', '!', "'"],
+];
+
+/** A glyph vector dropped into a key, sized by height, tinted with the key text. */
+const Glyph: React.FC<{name: keyof typeof KB_GLYPHS; h: number}> = ({name, h}) => {
+  const g = KB_GLYPHS[name];
+  return (
+    <svg width={(h * g.w) / g.h} height={h} viewBox={g.viewBox} fill="currentColor" style={{display: 'block'}}>
+      <path d={g.d} />
+    </svg>
+  );
+};
 
 const KeyCap: React.FC<{
   label?: string;
+  glyph?: keyof typeof KB_GLYPHS;
+  glyphH?: number;
   pressed?: boolean;
+  showPop?: boolean;
   flex?: number;
   width?: number;
-  children?: React.ReactNode;
   fontSize?: number;
-}> = ({label, pressed, flex, width, children, fontSize = 70}) => (
+  fontWeight?: number;
+}> = ({label, glyph, glyphH, pressed, showPop, flex, width, fontSize = LETTER_FS, fontWeight = 400}) => (
   <div
     style={{
       flex: width ? undefined : flex ?? 1,
       width,
+      minWidth: 0,
       height: KEY_H,
-      background: KEY,
-      borderRadius: 14,
-      boxShadow: KEY_SHADOW,
+      background: pressed ? '#fff' : 'rgba(255,255,255,0.92)',
+      borderRadius: KEY_R,
+      boxShadow: '0 1px 0 rgba(0,0,0,0.28), 0 2px 5px rgba(0,0,0,0.10)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       fontSize,
-      fontWeight: 400,
+      fontWeight,
       color: theme.ink,
-      fontFamily: theme.font,
+      fontFamily: uiFont,
       position: 'relative',
     }}
   >
-    {children ?? label}
-    {pressed && label && (
-      <div style={{position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)', width: 158, height: 196, pointerEvents: 'none', zIndex: 20}}>
+    {glyph ? <Glyph name={glyph} h={glyphH ?? px(13)} /> : label}
+    {showPop && pressed && label && (
+      <div style={{position: 'absolute', bottom: -px(2), left: '50%', transform: 'translateX(-50%)', width: px(58), pointerEvents: 'none', zIndex: 30}}>
         <div
           style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 132,
+            height: px(72),
             background: '#fff',
-            borderRadius: 24,
-            boxShadow: '0 6px 16px rgba(0,0,0,0.18)',
+            borderRadius: px(13),
+            boxShadow: '0 6px 16px rgba(0,0,0,0.22)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 92,
+            fontSize: px(34),
             color: theme.ink,
           }}
         >
           {label}
         </div>
-        <div style={{position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 96, height: 100, background: '#fff', borderRadius: 16}} />
+        {/* stem joining the balloon to the key */}
+        <div style={{margin: '-2px auto 0', width: px(36), height: px(20), background: '#fff', borderRadius: px(6)}} />
       </div>
     )}
   </div>
 );
 
-const Row: React.FC<{children: React.ReactNode; pad?: number}> = ({children, pad = 0}) => (
-  <div style={{display: 'flex', gap: 17, padding: `0 ${pad}px`, justifyContent: 'center'}}>{children}</div>
+const Row: React.FC<{children: React.ReactNode; pad?: number; gap?: number}> = ({children, pad = 0, gap = KEY_GAP}) => (
+  <div style={{display: 'flex', gap, padding: `0 ${pad}px`, justifyContent: 'center', width: '100%'}}>{children}</div>
 );
-
-export const KEYBOARD_HEIGHT = 716;
 
 export const Keyboard: React.FC<{
   pressedKey: string | null;
   suggestions: [string, string, string];
-}> = ({pressedKey, suggestions}) => {
+  mode?: KbMode;
+}> = ({pressedKey, suggestions, mode = 'letters'}) => {
+  const isLetters = mode === 'letters';
+  const rows = mode === 'numbers' ? NUMBERS : mode === 'symbols' ? SYMBOLS : LETTERS;
+  // row-3 left key: shift (letters) · #+= (numbers) · 123 (symbols)
+  const r3Left = isLetters
+    ? <KeyCap key="shift" glyph="shift" glyphH={px(15)} width={SIDE_W} />
+    : <KeyCap key="mode2" label={mode === 'numbers' ? '#+=' : '123'} width={MODE_W} fontSize={px(15.5)} />;
+  // row-4 left key: 123 (letters) · ABC (otherwise)
+  const r4Left = <KeyCap key="mode" label={isLetters ? '123' : 'ABC'} width={WIDE_W} fontSize={FUNC_FS} />;
+
   return (
     <div
       style={{
         height: KEYBOARD_HEIGHT,
-        background: 'rgba(214,215,221,0.62)',
-        backdropFilter: 'blur(40px) saturate(165%)',
-        WebkitBackdropFilter: 'blur(40px) saturate(165%)',
-        borderTopLeftRadius: 44,
-        borderTopRightRadius: 44,
-        borderTop: '1px solid rgba(255,255,255,0.55)',
-        fontFamily: theme.font,
+        background: 'rgba(209,212,219,0.82)',
+        backdropFilter: 'blur(50px) saturate(150%)',
+        WebkitBackdropFilter: 'blur(50px) saturate(150%)',
+        borderTopLeftRadius: TOP_R,
+        borderTopRightRadius: TOP_R,
+        boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)',
+        fontFamily: uiFont,
         display: 'flex',
         flexDirection: 'column',
-        paddingBottom: 36,
+        paddingTop: TOP_PAD,
         flexShrink: 0,
       }}
     >
-      {/* predictive / autocomplete bar */}
-      <div style={{height: 90, display: 'flex', alignItems: 'center'}}>
+      {/* predictive / autocorrection bar */}
+      <div style={{height: SUGG_H, display: 'flex', alignItems: 'center', padding: `0 ${px(8.5)}px`}}>
         {suggestions.map((s, i) => (
           <React.Fragment key={i}>
-            {i > 0 && <div style={{width: 1, height: 48, background: 'rgba(0,0,0,0.18)'}} />}
-            <div style={{flex: 1, textAlign: 'center', fontSize: 33, color: theme.ink, whiteSpace: 'nowrap', overflow: 'hidden'}}>
+            {i > 0 && <div style={{width: 1, height: px(20), background: 'rgba(0,0,0,0.12)'}} />}
+            <div style={{flex: 1, textAlign: 'center', fontSize: px(17), color: theme.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', padding: `0 ${px(8)}px`}}>
               {s}
             </div>
           </React.Fragment>
         ))}
       </div>
 
-      <div style={{display: 'flex', flexDirection: 'column', gap: 34, padding: '24px 16px 0'}}>
+      <div style={{display: 'flex', flexDirection: 'column', gap: ROW_GAP, padding: `${px(3)}px ${KEYS_PAD}px 0`}}>
+        {/* Row 1 — 10 keys full width */}
         <Row>
-          {ROW1.map((k) => (
-            <KeyCap key={k} label={k} pressed={pressedKey === k} />
+          {rows[0].map((k) => (
+            <KeyCap key={k} label={k} pressed={pressedKey === k} showPop={isLetters} />
           ))}
         </Row>
-        <Row pad={54}>
-          {ROW2.map((k) => (
-            <KeyCap key={k} label={k} pressed={pressedKey === k} />
+        {/* Row 2 — letters inset; symbols full width */}
+        <Row pad={isLetters ? ROW2_PAD : 0}>
+          {rows[1].map((k) => (
+            <KeyCap key={k} label={k} pressed={pressedKey === k} showPop={isLetters} />
           ))}
         </Row>
-        <Row>
-          <KeyCap width={118}>
-            {/* outline shift ⇧ */}
-            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke={theme.ink} strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round">
-              <path d="M12 4.5L19.5 12H15.5V18H8.5V12H4.5L12 4.5Z" />
-            </svg>
-          </KeyCap>
-          {ROW3.map((k) => (
-            <KeyCap key={k} label={k} pressed={pressedKey === k} />
-          ))}
-          <KeyCap width={118}>
-            {/* outline delete ⌫ */}
-            <svg width="54" height="44" viewBox="0 0 24 24" fill="none" stroke={theme.ink} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 5.5h11a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9L2.5 12 9 5.5z" />
-              <path d="M11.5 9.5l5 5M16.5 9.5l-5 5" />
-            </svg>
-          </KeyCap>
+        {/* Row 3 — mode/shift + middle keys + delete */}
+        <Row gap={isLetters ? ROW3_GAP : KEY_GAP}>
+          {r3Left}
+          <div style={{display: 'flex', flex: 1, gap: KEY_GAP, padding: isLetters ? 0 : `0 ${px(8)}px`}}>
+            {rows[2].map((k) => (
+              <KeyCap key={k} label={k} pressed={pressedKey === k} showPop={isLetters} />
+            ))}
+          </div>
+          <KeyCap glyph="delete" glyphH={px(13.5)} width={SIDE_W} />
         </Row>
+        {/* Row 4 — mode + space + return */}
         <Row>
-          <KeyCap width={122} fontSize={34} label="123" />
-          <KeyCap width={100}>
-            <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke={theme.ink} strokeWidth="1.5">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8" strokeLinecap="round" />
-              <circle cx="9" cy="10" r="1.1" fill={theme.ink} stroke="none" />
-              <circle cx="15" cy="10" r="1.1" fill={theme.ink} stroke="none" />
-            </svg>
-          </KeyCap>
-          <KeyCap flex={1}>
-            <div style={{width: '100%', textAlign: 'right', paddingRight: 28, fontSize: 28, color: 'rgba(0,0,0,0.36)'}}>EN IT</div>
-          </KeyCap>
-          <KeyCap width={230}>
-            {/* outline return ↵ */}
-            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke={theme.ink} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 8v3a3 3 0 0 1-3 3H7" />
-              <path d="M11 11l-4 3 4 3" />
-            </svg>
-          </KeyCap>
+          {r4Left}
+          <KeyCap flex={1} pressed={pressedKey === 'space'} />
+          <KeyCap glyph="return" glyphH={px(13)} width={RET_W} />
         </Row>
+      </div>
+
+      {/* bottom strip — emoji/globe (left) + dictation mic (right) */}
+      <div style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: `0 ${px(32)}px`}}>
+        <div style={{color: theme.ink, height: px(26.8)}}>
+          <Glyph name="emoji" h={px(26.8)} />
+        </div>
+        <div style={{color: theme.ink, height: px(24)}}>
+          <Glyph name="mic" h={px(24)} />
+        </div>
       </div>
     </div>
   );
 };
 
-/** Map a typed character to the key that lights up (letters + space only). */
+const SYM_SET = new Set([...NUMBERS.flat(), ...SYMBOLS.flat()]);
+
+/**
+ * Which layout the keyboard shows for the given character. Only digits flip it
+ * to the "123" pad (then it returns to letters) — punctuation stays on letters
+ * so the keyboard doesn't flicker mid-sentence.
+ */
+export const layoutForChar = (ch: string | null): KbMode => (ch && /[0-9]/.test(ch) ? 'numbers' : 'letters');
+
+/** Map a typed character to the key that lights up. */
 export const keyForChar = (ch: string | null): string | null => {
   if (!ch) return null;
   if (ch === ' ') return 'space';
   const lower = ch.toLowerCase();
-  return /^[a-z]$/.test(lower) ? lower : null;
+  if (/^[a-z]$/.test(lower)) return lower;
+  if (/[0-9]/.test(ch) || SYM_SET.has(ch)) return ch;
+  return null;
 };
 
 /** Lightweight, believable predictive-bar suggestions for the current word. */

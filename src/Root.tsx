@@ -10,6 +10,7 @@ import {IntroDisclaimer} from './components/IntroDisclaimer';
 import {INTRO_DISCLAIMERS} from './introDisclaimers';
 import {IntroChat, IntroChatProps, prepareIntroChat, introChatDuration} from './Intro';
 import {pickDisclaimer} from './introDisclaimers';
+import {KeyboardPreview} from './components/KeyboardPreview';
 
 const FPS = 30;
 const WIDTH = 1080;
@@ -91,6 +92,15 @@ export const RootWithWireframe: React.FC = () => (
         guestPhoto: 'faces/face2.jpg',
         message: 'Hi',
       }}
+    />
+    <Composition
+      id="Keyboard"
+      component={KeyboardPreview}
+      fps={FPS}
+      width={WIDTH}
+      height={HEIGHT}
+      durationInFrames={1}
+      defaultProps={{mode: 'letters' as const, pressedKey: 'g'}}
     />
     <Composition
       id="IntroChat"
