@@ -4,6 +4,8 @@ import {ChatReel} from './ChatReel';
 import {Wireframe} from './Wireframe';
 import {chatPropsSchema, ChatProps, DEFAULT_PROPS, DEFAULT_ITEMS} from './schema';
 import {buildTimeline, outroFrames} from './timeline';
+import {LockScreen} from './components/LockScreen';
+import {lockScreenFor} from './lockscreen';
 
 const FPS = 30;
 const WIDTH = 1080;
@@ -47,6 +49,21 @@ export const RootWithWireframe: React.FC = () => (
   <>
     <RemotionRoot />
     <Composition id="HeaderWireframe" component={Wireframe} fps={30} width={1080} height={940} durationInFrames={1} />
+    <Composition
+      id="LockScreen"
+      component={LockScreen}
+      fps={FPS}
+      width={WIDTH}
+      height={HEIGHT}
+      durationInFrames={90}
+      defaultProps={{
+        data: lockScreenFor('demo-michelle'),
+        guestName: 'Michelle',
+        guestSubtitle: 'Co-host on 10 listings',
+        guestPhoto: 'faces/face2.jpg',
+        message: 'Hi',
+      }}
+    />
   </>
 );
 
