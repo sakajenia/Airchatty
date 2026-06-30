@@ -95,8 +95,9 @@ const StatusRight: React.FC<{battery: number; charging: boolean}> = ({battery, c
 // highlight finish it. No fake bevel / text-shadow.
 
 const CLOCK_FS = 360; // glyph size (pre-stretch)
-const CLOCK_SY = 1.7; // vertical stretch → tall iOS digits
-const CLOCK_LS = -6; // letter spacing
+const CLOCK_SY = 1.3; // gentle vertical stretch → tall iOS lock-clock look
+const CLOCK_LS = -2; // letter spacing
+const CLOCK_WT = 500; // SF Pro Display Medium
 const CLOCK_H0 = 380; // unstretched box height
 const CLOCK_W = 1080;
 
@@ -121,7 +122,7 @@ const buildClockDisplacement = (time: string): string => {
   ctx.textBaseline = 'middle';
   // @ts-expect-error letterSpacing is supported in Chromium canvas
   ctx.letterSpacing = `${CLOCK_LS}px`;
-  ctx.font = `500 ${CLOCK_FS}px '${clockFont}', sans-serif`;
+  ctx.font = `${CLOCK_WT} ${CLOCK_FS}px '${clockFont}', sans-serif`;
   ctx.fillText(time, W / 2, H / 2 + 4);
 
   const N = W * H;
@@ -190,7 +191,7 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
   // digit mask (shared by the glass body + rim)
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${CLOCK_W}' height='${CLOCK_H0}'><text x='${
     CLOCK_W / 2
-  }' y='${CLOCK_H0 / 2 + 4}' font-family='${clockFont}' font-weight='500' font-size='${CLOCK_FS}' letter-spacing='${CLOCK_LS}' text-anchor='middle' dominant-baseline='central'>${time}</text></svg>`;
+  }' y='${CLOCK_H0 / 2 + 4}' font-family='${clockFont}' font-weight='${CLOCK_WT}' font-size='${CLOCK_FS}' letter-spacing='${CLOCK_LS}' text-anchor='middle' dominant-baseline='central'>${time}</text></svg>`;
   const mask = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
   const maskProps: React.CSSProperties = {
     WebkitMaskImage: mask,
@@ -200,16 +201,19 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
     WebkitMaskPosition: 'center',
     maskPosition: 'center',
   };
-  const faceBase: React.CSSProperties = {
-    position: 'absolute',
-    inset: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+  // All visible glass is drawn as SVG <text> at the SAME coords as the mask, so
+  // the refracted body and the bright rim line up perfectly (no ghosting).
+  const tx = CLOCK_W / 2;
+  const ty = CLOCK_H0 / 2 + 4;
+  const textAttrs = {
+    x: tx,
+    y: ty,
     fontFamily: clockFont,
-    fontWeight: 500,
+    fontWeight: CLOCK_WT,
     fontSize: CLOCK_FS,
     letterSpacing: CLOCK_LS,
+    textAnchor: 'middle' as const,
+    dominantBaseline: 'central' as const,
   };
 
   return (
@@ -218,52 +222,54 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
       <svg width="0" height="0" style={{position: 'absolute'}} aria-hidden>
         <filter id={fid} x="-15%" y="-15%" width="130%" height="130%" colorInterpolationFilters="sRGB">
           <feImage href={dispUrl} x="0" y="0" width={CLOCK_W} height={CLOCK_H0} preserveAspectRatio="none" result="dm" />
-          <feDisplacementMap in="SourceGraphic" in2="dm" scale="58" xChannelSelector="R" yChannelSelector="G" result="disp" />
+          <feDisplacementMap in="SourceGraphic" in2="dm" scale="36" xChannelSelector="R" yChannelSelector="G" result="disp" />
           <feGaussianBlur in="disp" stdDeviation="0.5" />
         </filter>
       </svg>
 
-      {/* stretch everything together so the mask + filter stay aligned */}
+      {/* stretch everything together so the mask + filter + text stay aligned */}
       <div style={{position: 'absolute', inset: 0, transform: `scaleY(${CLOCK_SY})`, transformOrigin: 'center top'}}>
         <div style={{position: 'relative', width: CLOCK_W, height: CLOCK_H0}}>
-          {/* glass body: the wallpaper REFRACTED through the digit shapes, with a
-              touch of frost + brightness so the digits read over flat areas too */}
+          {/* glass body: the wallpaper refracted + frosted through the digit shapes */}
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              backdropFilter: `url(#${fid}) blur(2px) brightness(1.14) saturate(1.12)`,
-              WebkitBackdropFilter: `url(#${fid}) blur(2px) brightness(1.14) saturate(1.12)`,
+              backdropFilter: `url(#${fid}) blur(6px) brightness(1.22) saturate(1.16)`,
+              WebkitBackdropFilter: `url(#${fid}) blur(6px) brightness(1.22) saturate(1.16)`,
               ...maskProps,
             }}
           />
-          {/* faint frosted fill so the body is present even over flat colour */}
-          <div style={{...faceBase, color: 'rgba(255,255,255,0.045)'}}>{time}</div>
-          {/* bright glass rim — the lit edge, with a soft outer glow */}
-          <div
-            style={{
-              ...faceBase,
-              color: 'transparent',
-              WebkitTextStroke: '2px rgba(255,255,255,0.7)',
-              filter: 'drop-shadow(0 0 2px rgba(255,255,255,0.45)) drop-shadow(0 4px 14px rgba(0,0,0,0.18))',
-            }}
-          >
-            {time}
-          </div>
-          {/* specular: a soft diagonal glint across the upper third */}
-          <div
-            style={{
-              ...faceBase,
-              color: 'transparent',
-              background:
-                'linear-gradient(118deg, transparent 34%, rgba(255,255,255,0.55) 46%, rgba(255,255,255,0.08) 53%, transparent 64%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              mixBlendMode: 'screen',
-            }}
-          >
-            {time}
-          </div>
+          {/* visible glass face — drawn as SVG so it aligns with the masked body */}
+          <svg width={CLOCK_W} height={CLOCK_H0} style={{position: 'absolute', inset: 0, overflow: 'visible'}}>
+            <defs>
+              {/* milky, top-lit sheen — the rounded rod surface */}
+              <linearGradient id={`${fid}_sheen`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fff" stopOpacity="0.55" />
+                <stop offset="16%" stopColor="#fff" stopOpacity="0.22" />
+                <stop offset="42%" stopColor="#fff" stopOpacity="0.13" />
+                <stop offset="72%" stopColor="#fff" stopOpacity="0.17" />
+                <stop offset="100%" stopColor="#fff" stopOpacity="0.34" />
+              </linearGradient>
+              {/* diagonal specular glint */}
+              <linearGradient id={`${fid}_spec`} x1="0" y1="0" x2="1" y2="0.5">
+                <stop offset="36%" stopColor="#fff" stopOpacity="0" />
+                <stop offset="46%" stopColor="#fff" stopOpacity="0.6" />
+                <stop offset="53%" stopColor="#fff" stopOpacity="0.1" />
+                <stop offset="64%" stopColor="#fff" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            {/* milky frosted body (lets the refraction show through) */}
+            <text {...textAttrs} fill={`url(#${fid}_sheen)`}>{time}</text>
+            {/* bright bevelled rim — the polished glass edge catching the light */}
+            <text {...textAttrs} fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.4">
+              {time}
+            </text>
+            {/* specular glint */}
+            <text {...textAttrs} fill={`url(#${fid}_spec)`} style={{mixBlendMode: 'screen'}}>
+              {time}
+            </text>
+          </svg>
         </div>
       </div>
     </div>
