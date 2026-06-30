@@ -96,10 +96,16 @@ export const Composer: React.FC<{
   );
 
   return (
+    // ONE white panel: rounded TOP corners only, its bottom FLUSH against the
+    // keyboard (no gap, no divider). A faint upward shadow defines the top edge
+    // and the rounded corners — there are no side lines.
     <div
       style={{
         background: theme.white,
-        padding: '8px 22px 16px',
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        boxShadow: '0 -2px 10px rgba(0,0,0,0.045)',
+        padding: '0 34px',
         fontFamily: theme.font,
         flexShrink: 0,
       }}
@@ -110,11 +116,7 @@ export const Composer: React.FC<{
           style={{
             position: 'relative',
             zIndex: 1,
-            // Floating rounded field: NO border lines — only the rounded corners
-            // read, via a soft shadow (measured from the reference). Radius ≈ 40.
-            borderRadius: 40,
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 8px 22px rgba(0,0,0,0.05)',
-            padding: '22px 32px 18px',
+            padding: '40px 0 30px',
             background: theme.white,
           }}
         >
