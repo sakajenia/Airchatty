@@ -2,6 +2,7 @@ import React from 'react';
 import {AbsoluteFill, staticFile} from 'remotion';
 import {theme} from '../util';
 import {LockScreenData} from '../lockscreen';
+import {clockFont} from '../clockfont';
 
 /**
  * iOS 26 "Liquid Glass" lock screen used as the video intro. The clock is real
@@ -84,13 +85,24 @@ const StatusRight: React.FC<{battery: number; charging: boolean}> = ({battery, c
   );
 };
 
-/** The Liquid-Glass clock — refraction layer (masked backdrop) + glass face. */
+/**
+ * The Liquid-Glass clock. iOS 26's lock clock is tall, near-monoline, and the
+ * digits are *transparent glass tubes*: the wallpaper shows through (refraction
+ * via a backdrop blur clipped to the digits), each stroke has a bright top rim
+ * + a soft underside shadow (the cylinder), and a diagonal specular streak.
+ * The whole thing is stretched vertically (scaleY) to match the OS proportions.
+ */
 const GlassClock: React.FC<{time: string}> = ({time}) => {
-  const FS = 360;
-  const H = Math.round(FS * 1.18);
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='1080' height='${H}'><text x='540' y='${
-    H / 2
-  }' font-family='${SF.replace(/"/g, "'")}' font-weight='600' font-size='${FS}' letter-spacing='-8' text-anchor='middle' dominant-baseline='central'>${time}</text></svg>`;
+  const FS = 360; // base glyph size (pre-stretch)
+  const SY = 1.72; // vertical stretch → tall iOS digits
+  const LS = -6; // letter spacing
+  const H0 = Math.round(FS * 1.0); // unstretched content height
+  const H = Math.round(H0 * SY); // visual height after stretch
+
+  const cf = clockFont; // 'PoppinsClock'
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='1080' height='${H0}'><text x='540' y='${
+    H0 / 2
+  }' font-family='${cf}' font-weight='500' font-size='${FS}' letter-spacing='${LS}' text-anchor='middle' dominant-baseline='central'>${time}</text></svg>`;
   const mask = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
   const maskProps: React.CSSProperties = {
     WebkitMaskImage: mask,
@@ -100,34 +112,77 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
     WebkitMaskPosition: 'center',
     maskPosition: 'center',
   };
+  const faceBase: React.CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontFamily: cf,
+    fontWeight: 500,
+    fontSize: FS,
+    letterSpacing: LS,
+  };
+
   return (
-    <div style={{position: 'relative', width: 1080, height: H}}>
-      {/* refraction: brighten + blur the wallpaper, clipped to the digits */}
-      <div style={{position: 'absolute', inset: 0, backdropFilter: 'blur(14px) brightness(1.22) saturate(1.15)', WebkitBackdropFilter: 'blur(14px) brightness(1.22) saturate(1.15)', ...maskProps}} />
-      {/* a faint inner tint so the glass body reads even over flat areas */}
-      <div style={{position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.05)', ...maskProps}} />
-      {/* glass face: vertical sheen fill + bright bevelled edge */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: SF,
-          fontWeight: 600,
-          fontSize: FS,
-          letterSpacing: -8,
-          color: 'transparent',
-          background:
-            'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.40) 42%, rgba(255,255,255,0.18) 52%, rgba(255,255,255,0.55) 100%)',
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          WebkitTextStroke: '2.2px rgba(255,255,255,0.5)',
-          filter: 'drop-shadow(0 2px 8px rgba(255,255,255,0.18)) drop-shadow(0 12px 34px rgba(0,0,0,0.22))',
-        }}
-      >
-        {time}
+    <div style={{width: 1080, height: H, position: 'relative'}}>
+      {/* stretch everything together so the digit mask + faces stay aligned */}
+      <div style={{position: 'absolute', inset: 0, transform: `scaleY(${SY})`, transformOrigin: 'center top'}}>
+        <div style={{position: 'relative', width: 1080, height: H0}}>
+          {/* refraction body: the wallpaper seen THROUGH the glass — gently
+              blurred + magnified (lensing) and a touch brighter. Kept subtle so
+              the digits stay transparent and rim-defined, like real glass. */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backdropFilter: 'blur(7px) brightness(1.08) saturate(1.14) contrast(1.02)',
+              WebkitBackdropFilter: 'blur(7px) brightness(1.08) saturate(1.14) contrast(1.02)',
+              transform: 'scale(1.04)',
+              ...maskProps,
+            }}
+          />
+          {/* glass face: transparent body, thin bright rim + a subtle cylinder
+              top-highlight / underside-shadow so each stroke reads as a rod. */}
+          <div
+            style={{
+              ...faceBase,
+              color: 'transparent',
+              WebkitTextStroke: '1.4px rgba(255,255,255,0.5)',
+              textShadow:
+                '0 -1.5px 1px rgba(255,255,255,0.42), 0 2px 4px rgba(0,0,0,0.28)',
+              filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.20))',
+            }}
+          >
+            {time}
+          </div>
+          {/* inner sheen: a very faint top-down gradient inside the strokes */}
+          <div
+            style={{
+              ...faceBase,
+              color: 'transparent',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.02) 40%, rgba(255,255,255,0) 64%, rgba(255,255,255,0.06) 100%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+            }}
+          >
+            {time}
+          </div>
+          {/* specular: a soft diagonal glint across the upper third */}
+          <div
+            style={{
+              ...faceBase,
+              color: 'transparent',
+              background:
+                'linear-gradient(118deg, transparent 33%, rgba(255,255,255,0.7) 46%, rgba(255,255,255,0.12) 53%, transparent 66%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              mixBlendMode: 'screen',
+            }}
+          >
+            {time}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -165,14 +220,13 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
         <StatusRight battery={data.battery} charging={data.charging} />
       </div>
 
-      {/* date + glass clock, high in the frame */}
-      <div style={{position: 'absolute', top: 196, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-        <span style={{fontFamily: SF, fontSize: 38, fontWeight: 600, color: 'rgba(255,255,255,0.92)', marginBottom: 6}}>{data.dateLabel}</span>
+      {/* date + glass clock + notification, stacked from the top third */}
+      <div style={{position: 'absolute', top: 188, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+        <span style={{fontFamily: SF, fontSize: 38, fontWeight: 600, color: 'rgba(255,255,255,0.92)', marginBottom: 4}}>{data.dateLabel}</span>
         <GlassClock time={data.time} />
-      </div>
 
-      {/* Airbnb push — Liquid Glass banner, placed just BELOW the clock */}
-      <div style={{position: 'absolute', top: 706, left: 36, right: 36}}>
+        {/* Airbnb push — Liquid Glass banner, placed just BELOW the clock */}
+        <div style={{width: 1080 - 72, marginTop: 40}}>
         <div
           style={{
             borderRadius: 50,
@@ -234,6 +288,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
               {message}
             </div>
           </div>
+        </div>
         </div>
       </div>
 

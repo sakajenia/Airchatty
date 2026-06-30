@@ -10,7 +10,10 @@ import {selectComposition, renderStill} from '@remotion/renderer';
 
 async function main() {
   const [, , id = 'LockScreen', out = 'out/lockscreen.png', propsJson, frameArg] = process.argv;
-  const inputProps = propsJson ? JSON.parse(propsJson) : {};
+  const propsText = propsJson && propsJson.startsWith('@')
+    ? require('fs').readFileSync(propsJson.slice(1), 'utf8')
+    : propsJson;
+  const inputProps = propsText ? JSON.parse(propsText) : {};
   const frame = frameArg ? Number(frameArg) : 0;
 
   console.log(`Bundling…`);
