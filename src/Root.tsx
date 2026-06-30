@@ -57,7 +57,7 @@ export const RootWithWireframe: React.FC = () => (
       height={HEIGHT}
       durationInFrames={90}
       defaultProps={{
-        data: lockScreenFor('demo-michelle'),
+        data: {...lockScreenFor('demo-michelle'), wallpaper: 'wallpapers/rome.jpg'},
         guestName: 'Michelle',
         guestSubtitle: 'Co-host on 10 listings',
         guestPhoto: 'faces/face2.jpg',

@@ -95,7 +95,7 @@ const StatusRight: React.FC<{battery: number; charging: boolean}> = ({battery, c
 // highlight finish it. No fake bevel / text-shadow.
 
 const CLOCK_FS = 360; // glyph size (pre-stretch)
-const CLOCK_SY = 1.3; // gentle vertical stretch → tall iOS lock-clock look
+const CLOCK_SY = 1.46; // vertical stretch → taller iOS lock-clock look
 const CLOCK_LS = -2; // letter spacing
 const CLOCK_WT = 500; // SF Pro Display Medium
 const CLOCK_H0 = 380; // unstretched box height
@@ -230,16 +230,20 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
       {/* stretch everything together so the mask + filter + text stay aligned */}
       <div style={{position: 'absolute', inset: 0, transform: `scaleY(${CLOCK_SY})`, transformOrigin: 'center top'}}>
         <div style={{position: 'relative', width: CLOCK_W, height: CLOCK_H0}}>
-          {/* glass body: the wallpaper refracted + frosted through the digit shapes */}
+          {/* glass body: the wallpaper refracted + lightly frosted through the
+              digits. Brightness kept ~neutral so the fill stays slightly darker
+              (smoked glass), not bright-white. */}
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              backdropFilter: `url(#${fid}) blur(6px) brightness(1.22) saturate(1.16)`,
-              WebkitBackdropFilter: `url(#${fid}) blur(6px) brightness(1.22) saturate(1.16)`,
+              backdropFilter: `url(#${fid}) blur(6px) brightness(1.0) saturate(1.08)`,
+              WebkitBackdropFilter: `url(#${fid}) blur(6px) brightness(1.0) saturate(1.08)`,
               ...maskProps,
             }}
           />
+          {/* a faint smoked tint so the digit fill reads slightly darker */}
+          <div style={{position: 'absolute', inset: 0, background: 'rgba(60,62,72,0.14)', ...maskProps}} />
           {/* visible glass face — drawn as SVG so it aligns with the masked body */}
           <svg width={CLOCK_W} height={CLOCK_H0} style={{position: 'absolute', inset: 0, overflow: 'visible'}}>
             <defs>
@@ -286,9 +290,15 @@ export type LockScreenProps = {
 
 const resolveSrc = (s: string) => (s.startsWith('data:') || s.startsWith('http') ? s : staticFile(s));
 
+/** Wallpaper can be a CSS gradient string OR an image file (public/) path. */
+const wallpaperStyle = (w: string): React.CSSProperties =>
+  /\.(jpe?g|png|webp)$/i.test(w)
+    ? {backgroundImage: `url(${resolveSrc(w)})`, backgroundSize: 'cover', backgroundPosition: 'center'}
+    : {background: w};
+
 export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSubtitle, guestPhoto, message}) => {
   return (
-    <AbsoluteFill style={{background: data.wallpaper, fontFamily: SF, overflow: 'hidden'}}>
+    <AbsoluteFill style={{...wallpaperStyle(data.wallpaper), fontFamily: SF, overflow: 'hidden'}}>
       {/* status bar */}
       <div
         style={{
@@ -317,18 +327,32 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
         <div style={{width: 1080 - 72, marginTop: 40}}>
         <div
           style={{
+            position: 'relative',
+            overflow: 'hidden',
             borderRadius: 50,
-            background: 'rgba(26,28,33,0.52)',
-            backdropFilter: 'blur(50px) saturate(1.7)',
-            WebkitBackdropFilter: 'blur(50px) saturate(1.7)',
-            border: '1px solid rgba(255,255,255,0.16)',
-            boxShadow: '0 24px 70px rgba(0,0,0,0.40), inset 0 1.5px 0 rgba(255,255,255,0.20)',
+            background: 'rgba(28,30,38,0.40)',
+            backdropFilter: 'blur(60px) saturate(1.9) brightness(1.05)',
+            WebkitBackdropFilter: 'blur(60px) saturate(1.9) brightness(1.05)',
+            border: '1px solid rgba(255,255,255,0.28)',
+            boxShadow:
+              '0 24px 70px rgba(0,0,0,0.30), inset 0 1.5px 1px rgba(255,255,255,0.40), inset 0 -2px 3px rgba(255,255,255,0.06)',
             padding: '28px 32px',
             display: 'flex',
             alignItems: 'center',
             gap: 26,
           }}
         >
+          {/* glassmorphism sheen — a soft diagonal highlight over the panel */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: 50,
+              background:
+                'linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.05) 26%, rgba(255,255,255,0) 56%, rgba(255,255,255,0.04) 100%)',
+              pointerEvents: 'none',
+            }}
+          />
           <div style={{position: 'relative', flexShrink: 0, width: 96, height: 96}}>
             <img
               src={resolveSrc(guestPhoto)}

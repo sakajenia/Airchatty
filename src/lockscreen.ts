@@ -60,8 +60,13 @@ export const WALLPAPERS: string[] = [
   'radial-gradient(56% 40% at 56% 33%, rgba(248,210,235,0.88) 0%, rgba(225,150,200,0.30) 46%, rgba(225,150,200,0) 72%), radial-gradient(105% 92% at 84% 82%, #5a2350 0%, #2e1230 50%, rgba(18,10,20,0) 86%), radial-gradient(112% 96% at 14% 4%, #c64f9a 0%, #7e2c66 48%, #120a14 100%)',
 ];
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// Italian, lowercase — exactly how an Italian iPhone shows the lock-screen date,
+// e.g. "venerdì 27 febbraio".
+const WEEKDAYS = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
+const MONTHS = [
+  'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
+  'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
+];
 const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 /** Day-of-week (0=Sun) for a Gregorian date via a Sakamoto-style table. */
