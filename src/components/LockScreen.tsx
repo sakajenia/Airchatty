@@ -97,11 +97,11 @@ const StatusRight: React.FC<{battery: number; charging: boolean}> = ({battery, c
 // physically warped *through* the glass. A thin bright rim + a soft specular
 // highlight finish it. No fake bevel / text-shadow.
 
-const CLOCK_FS = 360; // glyph size (pre-stretch)
-const CLOCK_SY = 1.28; // mild vertical stretch (keeps SF letterforms undistorted)
-const CLOCK_LS = -6; // letter spacing
-const CLOCK_WT = 700; // SF Pro Display Bold → thick solid glass rods
-const CLOCK_H0 = 380; // unstretched box height
+const CLOCK_FS = 360; // glyph size (sets WIDTH so 22:06 fits the screen)
+const CLOCK_SY = 2.45; // strong vertical stretch → the tall iOS lock clock (~33% of screen)
+const CLOCK_LS = -8; // letter spacing
+const CLOCK_WT = 700; // SF Pro Display Bold → thick glass rods
+const CLOCK_H0 = 340; // unstretched box height (digit cap-height fits)
 const CLOCK_W = 1080;
 
 /**
@@ -298,9 +298,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
         <StatusRight battery={data.battery} charging={data.charging} />
       </div>
 
-      {/* date + glass clock + notification, stacked from the top third */}
-      <div style={{position: 'absolute', top: 188, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-        <span style={{fontFamily: SF, fontSize: 40, fontWeight: 600, color: 'rgba(255,255,255,0.95)', letterSpacing: 0.3, marginBottom: 6}}>{TOP_LABEL}</span>
+      {/* date + glass clock + notification, stacked from the top */}
+      <div style={{position: 'absolute', top: 150, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+        <span style={{fontFamily: SF, fontSize: 40, fontWeight: 600, color: 'rgba(255,255,255,0.95)', letterSpacing: 0.3, marginBottom: 2}}>{TOP_LABEL}</span>
         <GlassClock time={data.time} />
 
         {/* Airbnb push — Liquid Glass banner, placed just BELOW the clock */}
