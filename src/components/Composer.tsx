@@ -4,61 +4,65 @@ import {theme} from '../util';
 import {EmojiText} from './EmojiText';
 
 /**
- * The Airbnb message composer: a rounded hairline-bordered card holding the
- * text the host has typed (with a blinking black caret) and, beneath it, the
- * [+] [quick-reply] controls on the left and the send button on the right —
- * black/active when there's text. Matches the reference screen recording.
+ * The Airbnb message composer: a rounded hairline-bordered white card holding the
+ * text the host has typed (blinking caret) and the [+] / quick-reply / send
+ * controls. When a guest is typing, a separate light-grey pill — "… {name} sta
+ * scrivendo" with bobbing dots — slides up from BEHIND the card. Colours and
+ * sizes measured pixel-by-pixel from the reference (strip #f6f6f6, text #767676,
+ * dots #000, dot ⌀7px, ~7px bob, ~1.1s loop).
  */
 export const Composer: React.FC<{
   text: string;
   sendActive: boolean;
-  /** When a guest is typing, their name — shows "… {name} sta scrivendo" on top. */
   typingName?: string;
-  /** Frame the guest's typing started — used for the strip's entrance. */
+  /** Frame the guest's typing started — drives the strip's slide-up entrance. */
   typingStartFrame?: number;
 }> = ({text, sendActive, typingName, typingStartFrame}) => {
   const frame = useCurrentFrame();
 
-  // Typing dots: small solid-BLACK dots bobbing up/down in a staggered travelling
-  // wave (no scale, no fade). Sizes/timing measured frame-by-frame from the
-  // reference: dot ⌀7px, gap 5px, ~7px peak-to-peak bob, ~1.1s loop.
+  // Typing dots: small solid-black dots, staggered vertical travelling wave.
   const PERIOD = 33; // ~1.1s loop at 30fps
   const AMP = 3.5; // 7px peak-to-peak
   const STAGGER = 1.2; // radians between adjacent dots (dot 0 leads)
   const dotY = (i: number) => -AMP * Math.sin((frame / PERIOD) * 2 * Math.PI - i * STAGGER);
 
-  // Entrance: the strip fades in and rises into place over ~0.3s (ease-out).
+  // Entrance: the pill slides up from behind the card over ~0.33s (ease-out).
   const ENTER = 10;
   const eP = typingStartFrame == null ? 1 : Math.max(0, Math.min(1, (frame - typingStartFrame) / ENTER));
   const eEase = 1 - Math.pow(1 - eP, 3);
+  const REVEAL = 52; // px the pill rises into place
 
-  const typingStrip = typingName ? (
+  const typingPill = typingName ? (
     <div
       style={{
+        position: 'absolute',
+        left: 72,
+        right: 72,
+        bottom: 'calc(100% - 14px)', // bottom tucks 14px behind the card's top
+        background: '#f6f6f6',
+        borderRadius: 30,
+        padding: '14px 0',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 12,
-        paddingBottom: 16,
-        marginBottom: 14,
-        borderBottom: `1px solid ${theme.hairline}`,
-        opacity: eEase,
-        transform: `translateY(${(1 - eEase) * 14}px)`,
+        zIndex: 0,
+        transform: `translateY(${(1 - eEase) * REVEAL}px)`,
       }}
     >
       <div style={{display: 'flex', alignItems: 'center', gap: 5, height: 16}}>
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            style={{width: 7, height: 7, borderRadius: '50%', background: theme.ink, transform: `translateY(${dotY(i)}px)`}}
+            style={{width: 7, height: 7, borderRadius: '50%', background: '#000', transform: `translateY(${dotY(i)}px)`}}
           />
         ))}
       </div>
-      <span style={{fontSize: 32, fontWeight: 500, color: theme.ash}}>{typingName} sta scrivendo…</span>
+      <span style={{fontSize: 32, fontWeight: 500, color: '#767676'}}>{typingName} sta scrivendo…</span>
     </div>
   ) : null;
-  // The field is always focused while the keyboard is up, so the caret blinks
-  // even when empty (at the start, before the placeholder) — like the app.
+
+  // The field is always focused while the keyboard is up, so the caret blinks.
   const caretOn = Math.floor(frame / 16) % 2 === 0;
   const caret = (
     <span
@@ -84,73 +88,77 @@ export const Composer: React.FC<{
         flexShrink: 0,
       }}
     >
-      <div
-        style={{
-          border: `1px solid ${theme.hairline}`,
-          borderRadius: 38,
-          padding: '22px 32px 18px',
-          background: theme.white,
-        }}
-      >
-        {typingStrip}
-        <div style={{fontSize: 44, lineHeight: 1.35, color: theme.ink, minHeight: 56}}>
-          {text ? (
-            <span>
-              <EmojiText text={text} />
-              {caret}
-            </span>
-          ) : (
-            <span>
-              {caret}
-              <span style={{color: theme.mute}}>Write a message…</span>
-            </span>
-          )}
-        </div>
-
-        <div style={{display: 'flex', alignItems: 'center', marginTop: 20}}>
-          <div
-            style={{
-              width: 86,
-              height: 86,
-              borderRadius: '50%',
-              background: theme.softCloud,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: 40,
-            }}
-          >
-            <svg width="44" height="44" viewBox="0 0 24 24" stroke={theme.ink} strokeWidth="2.2" strokeLinecap="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+      <div style={{position: 'relative'}}>
+        {typingPill}
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            border: `1px solid ${theme.hairline}`,
+            borderRadius: 38,
+            padding: '22px 32px 18px',
+            background: theme.white,
+          }}
+        >
+          <div style={{fontSize: 44, lineHeight: 1.35, color: theme.ink, minHeight: 56}}>
+            {text ? (
+              <span>
+                <EmojiText text={text} />
+                {caret}
+              </span>
+            ) : (
+              <span>
+                {caret}
+                <span style={{color: theme.mute}}>Write a message…</span>
+              </span>
+            )}
           </div>
-          {/* quick-replies / saved messages: two overlapping speech bubbles */}
-          <svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke={theme.ink} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="8.7" y="3.5" width="11.8" height="9" rx="2.6" fill={theme.white} />
-            <path
-              d="M5.6 7h7.5a2.6 2.6 0 0 1 2.6 2.6v3.8a2.6 2.6 0 0 1-2.6 2.6h-2.5l-1.5 2.1-1.5-2.1H5.6A2.6 2.6 0 0 1 3 13.4V9.6A2.6 2.6 0 0 1 5.6 7z"
-              fill={theme.white}
-            />
-            <path d="M6 10.4h6M6 12.9h3.8" />
-          </svg>
 
-          <div style={{flex: 1}} />
-
-          <div
-            style={{
-              width: 86,
-              height: 86,
-              borderRadius: '50%',
-              background: sendActive ? theme.ink : theme.softCloud,
-              border: sendActive ? 'none' : `1px solid ${theme.hairline}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke={sendActive ? '#fff' : theme.mute} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 19V5M5 12l7-7 7 7" />
+          <div style={{display: 'flex', alignItems: 'center', marginTop: 20}}>
+            <div
+              style={{
+                width: 86,
+                height: 86,
+                borderRadius: '50%',
+                background: theme.softCloud,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 40,
+              }}
+            >
+              <svg width="44" height="44" viewBox="0 0 24 24" stroke={theme.ink} strokeWidth="2.2" strokeLinecap="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </div>
+            {/* quick-replies / saved messages: two overlapping speech bubbles */}
+            <svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke={theme.ink} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="8.7" y="3.5" width="11.8" height="9" rx="2.6" fill={theme.white} />
+              <path
+                d="M5.6 7h7.5a2.6 2.6 0 0 1 2.6 2.6v3.8a2.6 2.6 0 0 1-2.6 2.6h-2.5l-1.5 2.1-1.5-2.1H5.6A2.6 2.6 0 0 1 3 13.4V9.6A2.6 2.6 0 0 1 5.6 7z"
+                fill={theme.white}
+              />
+              <path d="M6 10.4h6M6 12.9h3.8" />
             </svg>
+
+            <div style={{flex: 1}} />
+
+            <div
+              style={{
+                width: 86,
+                height: 86,
+                borderRadius: '50%',
+                background: sendActive ? theme.ink : theme.softCloud,
+                border: sendActive ? 'none' : `1px solid ${theme.hairline}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke={sendActive ? '#fff' : theme.mute} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
+            </div>
           </div>
         </div>
       </div>
