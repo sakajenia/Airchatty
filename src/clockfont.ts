@@ -1,21 +1,20 @@
-import {sfMedium, sfSemibold} from './clockfont-data';
+import {sfMedium, sfSemibold, sfBold, sfHeavy} from './clockfont-data';
 
 /**
  * The Liquid-Glass lock clock uses Apple's actual San Francisco Pro Display
  * (the real iOS lock-clock typeface), subset to digits + colon and embedded as
- * woff2 data URIs so the render never waits on a network fetch. Weight 500
- * (Medium) / 600 (Semibold).
+ * woff2 data URIs so the render never waits on a network fetch.
+ * Weights: 500 Medium, 600 Semibold, 700 Bold, 900 Heavy.
  */
 export const clockFont = 'SFClock';
 
 if (typeof document !== 'undefined') {
+  const face = (b64: string, w: number) =>
+    `@font-face{font-family:'SFClock';src:url(data:font/woff2;base64,${b64}) format('woff2');font-weight:${w};font-style:normal;font-display:block;}`;
   const style = document.createElement('style');
-  style.textContent =
-    `@font-face{font-family:'SFClock';src:url(data:font/woff2;base64,${sfMedium}) format('woff2');font-weight:500;font-style:normal;font-display:block;}` +
-    `@font-face{font-family:'SFClock';src:url(data:font/woff2;base64,${sfSemibold}) format('woff2');font-weight:600;font-style:normal;font-display:block;}`;
+  style.textContent = face(sfMedium, 500) + face(sfSemibold, 600) + face(sfBold, 700) + face(sfHeavy, 900);
   document.head.appendChild(style);
   if ('fonts' in document) {
-    document.fonts.load("500 16px 'SFClock'").catch(() => undefined);
-    document.fonts.load("600 16px 'SFClock'").catch(() => undefined);
+    [500, 600, 700, 900].forEach((w) => document.fonts.load(`${w} 16px 'SFClock'`).catch(() => undefined));
   }
 }

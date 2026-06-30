@@ -97,10 +97,10 @@ const StatusRight: React.FC<{battery: number; charging: boolean}> = ({battery, c
 // physically warped *through* the glass. A thin bright rim + a soft specular
 // highlight finish it. No fake bevel / text-shadow.
 
-const CLOCK_FS = 360; // glyph size (pre-stretch)
-const CLOCK_SY = 1.46; // vertical stretch → taller iOS lock-clock look
-const CLOCK_LS = -2; // letter spacing
-const CLOCK_WT = 500; // SF Pro Display Medium
+const CLOCK_FS = 350; // glyph size (pre-stretch)
+const CLOCK_SY = 1.5; // vertical stretch → tall iOS lock-clock look
+const CLOCK_LS = -4; // letter spacing
+const CLOCK_WT = 700; // SF Pro Display Bold → thick solid glass rods
 const CLOCK_H0 = 380; // unstretched box height
 const CLOCK_W = 1080;
 
