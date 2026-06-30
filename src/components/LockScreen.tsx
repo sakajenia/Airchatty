@@ -105,102 +105,14 @@ const CLOCK_H0 = 340; // unstretched box height (digit cap-height fits)
 const CLOCK_W = 1080;
 
 /**
- * Build the two maps the glass filter needs, from the digit shapes:
- *  • `disp`   — a normal map (R = x-bend, G = y-bend) for feDisplacementMap, so
- *               the wallpaper is refracted through the glass.
- *  • `height` — a smooth bump (alpha = blurred coverage) for feSpecularLighting,
- *               so each stroke gets real 3-D rounded-rod highlights from a light.
- * This is the kube.io recipe (refraction + specular lighting) that gives the
- * iOS-26 lock clock its solid glass-rod look. Memoised by the time string.
+ * The lock clock. Per the brief, a SIMPLE frosted glass: the digit shapes are a
+ * mask over a high-opacity light fill plus a backdrop blur of the wallpaper —
+ * no displacement, no specular, no rim. Just blurred glass with a light tint.
  */
-const buildClockGlass = (time: string): {disp: string; height: string} => {
-  if (typeof document === 'undefined') return {disp: '', height: ''};
-  const W = CLOCK_W;
-  const H = CLOCK_H0;
-  const c = document.createElement('canvas');
-  c.width = W;
-  c.height = H;
-  const ctx = c.getContext('2d');
-  if (!ctx) return {disp: '', height: ''};
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#fff';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  // @ts-expect-error letterSpacing is supported in Chromium canvas
-  ctx.letterSpacing = `${CLOCK_LS}px`;
-  ctx.font = `${CLOCK_WT} ${CLOCK_FS}px '${clockFont}', sans-serif`;
-  ctx.fillText(time, W / 2, H / 2 + 4);
-
-  const N = W * H;
-  const src = ctx.getImageData(0, 0, W, H).data;
-  const cov = new Float32Array(N);
-  for (let i = 0; i < N; i++) cov[i] = src[i * 4] / 255; // coverage (white digits)
-
-  // separable box blur (two passes) → smooth, dome-shaped rod cross-sections
-  const r = 22;
-  const len = 2 * r + 1;
-  const t1 = new Float32Array(N);
-  const t2 = new Float32Array(N);
-  for (let y = 0; y < H; y++) {
-    const row = y * W;
-    let sum = 0;
-    for (let k = -r; k <= r; k++) sum += cov[row + Math.min(W - 1, Math.max(0, k))];
-    for (let x = 0; x < W; x++) {
-      t1[row + x] = sum / len;
-      sum += cov[row + Math.min(W - 1, x + r + 1)] - cov[row + Math.max(0, x - r)];
-    }
-  }
-  for (let x = 0; x < W; x++) {
-    let sum = 0;
-    for (let k = -r; k <= r; k++) sum += t1[Math.min(H - 1, Math.max(0, k)) * W + x];
-    for (let y = 0; y < H; y++) {
-      t2[y * W + x] = sum / len;
-      sum += t1[Math.min(H - 1, y + r + 1) * W + x] - t1[Math.max(0, y - r) * W + x];
-    }
-  }
-
-  const clamp = (v: number) => Math.max(0, Math.min(255, v));
-
-  // normal map (gradient of the height field) for refraction
-  const dispImg = ctx.createImageData(W, H);
-  const d = dispImg.data;
-  const GAIN = 760;
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      const i = y * W + x;
-      const gx = t2[i + (x < W - 1 ? 1 : 0)] - t2[i - (x > 0 ? 1 : 0)];
-      const gy = t2[i + (y < H - 1 ? W : 0)] - t2[i - (y > 0 ? W : 0)];
-      d[i * 4] = clamp(128 - gx * GAIN);
-      d[i * 4 + 1] = clamp(128 - gy * GAIN);
-      d[i * 4 + 2] = 128;
-      d[i * 4 + 3] = 255;
-    }
-  }
-  ctx.putImageData(dispImg, 0, 0);
-  const disp = c.toDataURL();
-
-  // height map (white, alpha = bump) for the specular lighting
-  const hImg = ctx.createImageData(W, H);
-  const hd = hImg.data;
-  for (let i = 0; i < N; i++) {
-    hd[i * 4] = 255;
-    hd[i * 4 + 1] = 255;
-    hd[i * 4 + 2] = 255;
-    hd[i * 4 + 3] = clamp(t2[i] * 255);
-  }
-  ctx.putImageData(hImg, 0, 0);
-  const height = c.toDataURL();
-
-  return {disp, height};
-};
-
 const GlassClock: React.FC<{time: string}> = ({time}) => {
   const H = Math.round(CLOCK_H0 * CLOCK_SY);
-  const {disp: dispUrl, height: heightUrl} = React.useMemo(() => buildClockGlass(time), [time]);
-  const fid = `clockGlass_${time.replace(/\D/g, '')}`;
 
-  // digit mask (clips the glass body to the digit shapes)
+  // digit mask (clips the frosted glass to the digit shapes)
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${CLOCK_W}' height='${CLOCK_H0}'><text x='${
     CLOCK_W / 2
   }' y='${CLOCK_H0 / 2 + 4}' font-family='${clockFont}' font-weight='${CLOCK_WT}' font-size='${CLOCK_FS}' letter-spacing='${CLOCK_LS}' text-anchor='middle' dominant-baseline='central'>${time}</text></svg>`;
@@ -213,47 +125,23 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
     WebkitMaskPosition: 'center',
     maskPosition: 'center',
   };
+
   return (
     <div style={{width: CLOCK_W, height: H, position: 'relative'}}>
-      <svg width="0" height="0" style={{position: 'absolute'}} aria-hidden>
-        {/* (1) the glass body: refract + blur + saturate the wallpaper (the
-            translucent, frosted "see-through" part of glassmorphism) */}
-        <filter id={`${fid}r`} x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
-          <feImage href={dispUrl} x="0" y="0" width={CLOCK_W} height={CLOCK_H0} preserveAspectRatio="none" result="nmap" />
-          <feDisplacementMap in="SourceGraphic" in2="nmap" scale="16" xChannelSelector="R" yChannelSelector="G" result="refr" />
-          <feGaussianBlur in="refr" stdDeviation="4" />
-        </filter>
-        {/* (2) broad specular highlight along the curved rod surface — the bright
-            cylinder sheen, kept translucent (screen-blended over the body) */}
-        <filter id={`${fid}l`} x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
-          <feImage href={heightUrl} x="0" y="0" width={CLOCK_W} height={CLOCK_H0} preserveAspectRatio="none" result="h0" />
-          <feGaussianBlur in="h0" stdDeviation="5" result="h" />
-          <feSpecularLighting in="h" surfaceScale="13" specularConstant="1.25" specularExponent="9" lightingColor="#ffffff" result="spec">
-            <feDistantLight azimuth="235" elevation="58" />
-          </feSpecularLighting>
-          <feComposite in="spec" in2="h0" operator="in" />
-        </filter>
-      </svg>
-
-      {/* stretch everything together so mask + maps stay aligned */}
       <div style={{position: 'absolute', inset: 0, transform: `scaleY(${CLOCK_SY})`, transformOrigin: 'center top'}}>
         <div style={{position: 'relative', width: CLOCK_W, height: CLOCK_H0}}>
-          {/* translucent frosted body — refracted + blurred wallpaper */}
+          {/* simple frosted glass: blur the wallpaper behind + a high-opacity
+              light fill, clipped to the digits */}
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              backdropFilter: `url(#${fid}r) blur(6px) brightness(1.12) saturate(1.3)`,
-              WebkitBackdropFilter: `url(#${fid}r) blur(6px) brightness(1.12) saturate(1.3)`,
+              backdropFilter: 'blur(30px) saturate(1.25) brightness(1.04)',
+              WebkitBackdropFilter: 'blur(30px) saturate(1.25) brightness(1.04)',
+              background: 'rgba(250,251,255,0.55)',
               ...maskProps,
             }}
           />
-          {/* a subtle milky tint (glassmorphism) — keeps it light but translucent */}
-          <div style={{position: 'absolute', inset: 0, background: 'rgba(245,248,253,0.17)', ...maskProps}} />
-          {/* broad specular cylinder sheen (screen) — the bright curved highlight */}
-          <svg width={CLOCK_W} height={CLOCK_H0} style={{position: 'absolute', inset: 0, opacity: 0.9, mixBlendMode: 'screen', ...maskProps}}>
-            <rect width={CLOCK_W} height={CLOCK_H0} filter={`url(#${fid}l)`} />
-          </svg>
         </div>
       </div>
     </div>
