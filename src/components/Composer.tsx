@@ -7,9 +7,10 @@ import {EmojiText} from './EmojiText';
  * The Airbnb message composer: a rounded hairline-bordered white card holding the
  * text the host has typed (blinking caret) and the [+] / quick-reply / send
  * controls. When a guest is typing, a separate light-grey pill — "… {name} sta
- * scrivendo" with bobbing dots — slides up from BEHIND the card. Colours and
+ * scrivendo" with bobbing dots — slides up from BEHIND the card and reserves
+ * its own space (the chat above is pushed up, never overlapped). Colours and
  * sizes measured pixel-by-pixel from the reference (strip #f6f6f6, text #767676,
- * dots #000, dot ⌀7px, ~7px bob, ~1.1s loop).
+ * dots #000, dot ⌀7px, ~7px bob, ~1.1s loop; pill ≈ card width, ~92px exposed).
  */
 export const Composer: React.FC<{
   text: string;
@@ -30,38 +31,52 @@ export const Composer: React.FC<{
   const ENTER = 10;
   const eP = typingStartFrame == null ? 1 : Math.max(0, Math.min(1, (frame - typingStartFrame) / ENTER));
   const eEase = 1 - Math.pow(1 - eP, 3);
-  const REVEAL = 120; // px the pill rises into place (≈ its full height)
 
-  // Geometry measured from the reference: ~36px of pill above the text, the text
-  // line itself, then ~26px clearance before the white card — and the pill's
-  // bottom 26px tuck behind the card. Exposed height ≈ 100px.
-  const typingPill = typingName ? (
-    <div
-      style={{
-        position: 'absolute',
-        left: 72,
-        right: 72,
-        bottom: 'calc(100% - 26px)', // bottom tucks 26px behind the card's top
-        background: '#f6f6f6',
-        borderRadius: 34,
-        padding: '36px 0 52px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-        zIndex: 0,
-        transform: `translateY(${(1 - eEase) * REVEAL}px)`,
-      }}
-    >
-      <div style={{display: 'flex', alignItems: 'center', gap: 5, height: 16}}>
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            style={{width: 7, height: 7, borderRadius: '50%', background: '#000', transform: `translateY(${dotY(i)}px)`}}
-          />
-        ))}
+  // Geometry measured pixel-by-pixel from the reference (scaled by card-width
+  // ratio 0.787 from the 1320px crop to this 1080px canvas):
+  //  • the pill is ~the full card width, inset only ~8px each side;
+  //  • ~92px of it shows above the white card, the rest tucks behind it;
+  //  • the text sits centred in that exposed band.
+  // Crucially the pill lives in NORMAL FLOW (a spacer of its exposed height),
+  // so the whole composer grows and the chat above is pushed up — it never
+  // overlaps the timestamps / read-receipts.
+  const EXPOSED = 92; // visible pill height above the card
+  const TUCK = 38; // px hidden behind the card (≥ radius, so bottom corners vanish)
+  const PILL_H = EXPOSED + TUCK;
+  const PILL_R = 36; // top-corner radius
+  const PILL_INSET = 8; // each side, relative to the card edges
+
+  const typingArea = typingName ? (
+    <div style={{height: EXPOSED * eEase, position: 'relative'}}>
+      <div
+        style={{
+          position: 'absolute',
+          left: PILL_INSET,
+          right: PILL_INSET,
+          top: 0,
+          height: PILL_H,
+          boxSizing: 'border-box',
+          paddingBottom: TUCK, // centres the content in the EXPOSED band, not the whole pill
+          background: '#f6f6f6',
+          borderRadius: PILL_R,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 12,
+          zIndex: 0,
+          transform: `translateY(${(1 - eEase) * PILL_H}px)`, // rises from behind the card
+        }}
+      >
+        <div style={{display: 'flex', alignItems: 'center', gap: 5, height: 16}}>
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              style={{width: 7, height: 7, borderRadius: '50%', background: '#000', transform: `translateY(${dotY(i)}px)`}}
+            />
+          ))}
+        </div>
+        <span style={{fontSize: 32, fontWeight: 500, color: '#767676'}}>{typingName} sta scrivendo…</span>
       </div>
-      <span style={{fontSize: 32, fontWeight: 500, color: '#767676'}}>{typingName} sta scrivendo…</span>
     </div>
   ) : null;
 
@@ -92,7 +107,7 @@ export const Composer: React.FC<{
       }}
     >
       <div style={{position: 'relative'}}>
-        {typingPill}
+        {typingArea}
         <div
           style={{
             position: 'relative',
