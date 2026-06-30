@@ -98,10 +98,8 @@ export const Composer: React.FC<{
   return (
     <div
       style={{
-        background: 'rgba(252,252,253,0.86)',
-        backdropFilter: 'blur(30px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(30px) saturate(160%)',
-        padding: '10px 22px 12px',
+        background: theme.white,
+        padding: '8px 22px 16px',
         fontFamily: theme.font,
         flexShrink: 0,
       }}
@@ -112,8 +110,9 @@ export const Composer: React.FC<{
           style={{
             position: 'relative',
             zIndex: 1,
-            border: `1px solid ${theme.hairline}`,
-            borderRadius: 38,
+            // light, subtle rounded border (no hard divider toward the keyboard)
+            border: '1px solid #ececec',
+            borderRadius: 34,
             padding: '22px 32px 18px',
             background: theme.white,
           }}
@@ -149,8 +148,9 @@ export const Composer: React.FC<{
                 <path d="M12 5v14M5 12h14" />
               </svg>
             </div>
-            {/* quick-replies / saved messages: two overlapping speech bubbles */}
-            <svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke={theme.ink} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            {/* quick-replies / saved messages: two overlapping speech bubbles —
+                thin, grey strokes (not heavy black), per the reference */}
+            <svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
               <rect x="8.7" y="3.5" width="11.8" height="9" rx="2.6" fill={theme.white} />
               <path
                 d="M5.6 7h7.5a2.6 2.6 0 0 1 2.6 2.6v3.8a2.6 2.6 0 0 1-2.6 2.6h-2.5l-1.5 2.1-1.5-2.1H5.6A2.6 2.6 0 0 1 3 13.4V9.6A2.6 2.6 0 0 1 5.6 7z"
@@ -166,14 +166,14 @@ export const Composer: React.FC<{
                 width: 86,
                 height: 86,
                 borderRadius: '50%',
-                background: sendActive ? theme.ink : theme.softCloud,
-                border: sendActive ? 'none' : `1px solid ${theme.hairline}`,
+                // empty → very light grey (no border); with text → solid dark
+                background: sendActive ? theme.ink : '#f0f0f0',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke={sendActive ? '#fff' : theme.mute} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke={sendActive ? '#fff' : '#c4c4c8'} strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 19V5M5 12l7-7 7 7" />
               </svg>
             </div>
