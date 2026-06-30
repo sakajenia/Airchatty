@@ -97,104 +97,107 @@ const StatusRight: React.FC<{battery: number; charging: boolean}> = ({battery, c
 // physically warped *through* the glass. A thin bright rim + a soft specular
 // highlight finish it. No fake bevel / text-shadow.
 
-// The reference uses SF Pro COMPRESSED Medium (naturally tall + narrow), so the
-// font is NOT stretched. Until that exact font file is available we render with
-// SF Pro Display Medium un-stretched as a placeholder.
-const CLOCK_FS = 380; // glyph size
-const CLOCK_SY = 1.0; // NO stretch — the font itself is compressed
-const CLOCK_LS = -4; // letter spacing
-const CLOCK_WT = 500; // Medium
-const CLOCK_H0 = 320; // box height (digit cap-height fits)
+// SF Pro COMPRESSED Medium is naturally tall & narrow, so NO stretch is used.
+const CLOCK_FS = 630; // glyph size (fits the screen width with margins)
+const CLOCK_LS = -8; // letter spacing
+const CLOCK_WT = 400; // the embedded instance is already Medium
+const CLOCK_H0 = 540; // box height (contains the tall glyphs)
 const CLOCK_W = 1080;
 
 /**
- * The lock clock. Per the brief, a SIMPLE frosted glass: the digit shapes are a
- * mask over a high-opacity light fill plus a backdrop blur of the wallpaper —
- * no displacement, no specular, no rim. Just blurred glass with a light tint.
+ * Build the glass artwork from the REAL clock font via canvas (so it matches the
+ * font everywhere — the old data-URI SVG mask silently fell back to a different
+ * font, which is what produced the overlapping "double" text). Returns:
+ *  • `mask` — white digit shapes, used to clip the frosted backdrop fill;
+ *  • `glow` — the inner white glow + 1px border (the provided glassmorphism
+ *             `inset 0 0 28px 14px` + `border`), drawn on the SAME shape.
  */
-const GlassClock: React.FC<{time: string}> = ({time}) => {
-  const H = Math.round(CLOCK_H0 * CLOCK_SY);
-
-  // digit mask (clips the frosted glass to the digit shapes)
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${CLOCK_W}' height='${CLOCK_H0}'><text x='${
-    CLOCK_W / 2
-  }' y='${CLOCK_H0 / 2 + 4}' font-family='${clockFont}' font-weight='${CLOCK_WT}' font-size='${CLOCK_FS}' letter-spacing='${CLOCK_LS}' text-anchor='middle' dominant-baseline='central'>${time}</text></svg>`;
-  const mask = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
-  const maskProps: React.CSSProperties = {
-    WebkitMaskImage: mask,
-    maskImage: mask,
-    WebkitMaskRepeat: 'no-repeat',
-    maskRepeat: 'no-repeat',
-    WebkitMaskPosition: 'center',
-    maskPosition: 'center',
+const buildClockGlass = (time: string): {mask: string; glow: string} => {
+  if (typeof document === 'undefined') return {mask: '', glow: ''};
+  const W = CLOCK_W;
+  const H = CLOCK_H0;
+  const font = `${CLOCK_WT} ${CLOCK_FS}px '${clockFont}', sans-serif`;
+  const setup = (ctx: CanvasRenderingContext2D) => {
+    ctx.font = font;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // @ts-expect-error letterSpacing is supported in Chromium canvas
+    ctx.letterSpacing = `${CLOCK_LS}px`;
+  };
+  const make = () => {
+    const c = document.createElement('canvas');
+    c.width = W;
+    c.height = H;
+    return [c, c.getContext('2d') as CanvasRenderingContext2D] as const;
   };
 
-  const fid = `clk_${time.replace(/\D/g, '')}`;
+  // (1) the digit shapes
+  const [shapeC, s] = make();
+  setup(s);
+  s.fillStyle = '#fff';
+  s.fillText(time, W / 2, H / 2);
+  const mask = shapeC.toDataURL();
+
+  // (2) inner glow: white everywhere EXCEPT the digits, blurred, then kept only
+  // inside the digits → a glow that hugs the inner edges.
+  const [outC, o] = make();
+  o.fillStyle = '#fff';
+  o.fillRect(0, 0, W, H);
+  o.globalCompositeOperation = 'destination-out';
+  o.drawImage(shapeC, 0, 0);
+
+  const [glowC, g] = make();
+  g.filter = 'blur(14px)';
+  g.drawImage(outC, 0, 0);
+  g.filter = 'none';
+  g.globalCompositeOperation = 'destination-in';
+  g.drawImage(shapeC, 0, 0);
+  // intensify the glow (the spec's 1.4 alpha is very strong)
+  g.globalCompositeOperation = 'lighter';
+  g.drawImage(glowC, 0, 0);
+  // 1px glass border
+  g.globalCompositeOperation = 'source-over';
+  setup(g);
+  g.lineWidth = 2.4;
+  g.strokeStyle = 'rgba(255,255,255,0.5)';
+  g.strokeText(time, W / 2, H / 2);
+  const glow = glowC.toDataURL();
+
+  return {mask, glow};
+};
+
+/**
+ * The lock clock: one coherent glass digit string. A backdrop-blur + light
+ * translucent fill clipped to the digit shapes, plus the inner glow + border —
+ * all derived from the same real font. No stretch, no overlapping text.
+ */
+const GlassClock: React.FC<{time: string}> = ({time}) => {
+  const {mask: maskUrl, glow: glowUrl} = React.useMemo(() => buildClockGlass(time), [time]);
+  const maskProps: React.CSSProperties = {
+    WebkitMaskImage: `url(${maskUrl})`,
+    maskImage: `url(${maskUrl})`,
+    WebkitMaskSize: '100% 100%',
+    maskSize: '100% 100%',
+    WebkitMaskRepeat: 'no-repeat',
+    maskRepeat: 'no-repeat',
+  };
+
   return (
-    <div style={{width: CLOCK_W, height: H, position: 'relative'}}>
-      <div style={{position: 'absolute', inset: 0, transform: `scaleY(${CLOCK_SY})`, transformOrigin: 'center top'}}>
-        <div style={{position: 'relative', width: CLOCK_W, height: CLOCK_H0}}>
-          {/* Glassmorphism per the provided card spec, adapted to the digits:
-              backdrop-filter blur(9px) + background rgba(255,255,255,0.14). */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backdropFilter: 'blur(9px)',
-              WebkitBackdropFilter: 'blur(9px)',
-              background: 'rgba(255,255,255,0.14)',
-              ...maskProps,
-            }}
-          />
-          {/* border (1px rgba(255,255,255,0.3)) + the strong inner white glow
-              (inset 0 0 28px 14px rgba(255,255,255,1.4)) + top/bottom inset edges */}
-          <svg width={CLOCK_W} height={CLOCK_H0} style={{position: 'absolute', inset: 0, overflow: 'visible'}}>
-            <defs>
-              <filter id={fid} x="-15%" y="-15%" width="130%" height="130%" colorInterpolationFilters="sRGB">
-                <feFlood floodColor="#ffffff" floodOpacity="1" result="w" />
-                <feComposite in="w" in2="SourceAlpha" operator="out" result="outside" />
-                <feGaussianBlur in="outside" stdDeviation="13" result="b" />
-                <feComposite in="b" in2="SourceAlpha" operator="in" result="glow" />
-                <feMerge>
-                  <feMergeNode in="glow" />
-                  <feMergeNode in="glow" />
-                </feMerge>
-              </filter>
-            </defs>
-            {/* the bright inner glow, clipped to the digits */}
-            <text
-              x={CLOCK_W / 2}
-              y={CLOCK_H0 / 2 + 4}
-              fontFamily={clockFont}
-              fontWeight={CLOCK_WT}
-              fontSize={CLOCK_FS}
-              letterSpacing={CLOCK_LS}
-              textAnchor="middle"
-              dominantBaseline="central"
-              fill="#ffffff"
-              filter={`url(#${fid})`}
-            >
-              {time}
-            </text>
-            {/* the 1px white border (glass edge) */}
-            <text
-              x={CLOCK_W / 2}
-              y={CLOCK_H0 / 2 + 4}
-              fontFamily={clockFont}
-              fontWeight={CLOCK_WT}
-              fontSize={CLOCK_FS}
-              letterSpacing={CLOCK_LS}
-              textAnchor="middle"
-              dominantBaseline="central"
-              fill="none"
-              stroke="rgba(255,255,255,0.45)"
-              strokeWidth="1.4"
-            >
-              {time}
-            </text>
-          </svg>
-        </div>
-      </div>
+    <div style={{width: CLOCK_W, height: CLOCK_H0, position: 'relative'}}>
+      {/* frosted translucent fill: backdrop blur(9px) + rgba(255,255,255,0.14),
+          clipped to the digits (mask uses the real font, so no double text) */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backdropFilter: 'blur(9px)',
+          WebkitBackdropFilter: 'blur(9px)',
+          background: 'rgba(255,255,255,0.14)',
+          ...maskProps,
+        }}
+      />
+      {/* inner white glow + border, on the exact same shape */}
+      {glowUrl ? <img src={glowUrl} width={CLOCK_W} height={CLOCK_H0} style={{position: 'absolute', inset: 0}} alt="" /> : null}
     </div>
   );
 };
@@ -239,7 +242,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
 
       {/* date + glass clock + notification, stacked from the top */}
       <div style={{position: 'absolute', top: 196, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-        <span style={{fontFamily: SF, fontSize: 40, fontWeight: 600, color: 'rgba(255,255,255,0.95)', letterSpacing: 0.3, marginBottom: 2}}>{TOP_LABEL}</span>
+        <span style={{fontFamily: SF, fontSize: 40, fontWeight: 600, color: 'rgba(255,255,255,0.95)', letterSpacing: 0.3, marginBottom: 18}}>{TOP_LABEL}</span>
         <GlassClock time={data.time} />
 
         {/* Airbnb push — Liquid Glass banner, placed just BELOW the clock */}
