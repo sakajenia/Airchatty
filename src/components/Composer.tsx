@@ -30,18 +30,21 @@ export const Composer: React.FC<{
   const ENTER = 10;
   const eP = typingStartFrame == null ? 1 : Math.max(0, Math.min(1, (frame - typingStartFrame) / ENTER));
   const eEase = 1 - Math.pow(1 - eP, 3);
-  const REVEAL = 52; // px the pill rises into place
+  const REVEAL = 120; // px the pill rises into place (≈ its full height)
 
+  // Geometry measured from the reference: ~36px of pill above the text, the text
+  // line itself, then ~26px clearance before the white card — and the pill's
+  // bottom 26px tuck behind the card. Exposed height ≈ 100px.
   const typingPill = typingName ? (
     <div
       style={{
         position: 'absolute',
         left: 72,
         right: 72,
-        bottom: 'calc(100% - 14px)', // bottom tucks 14px behind the card's top
+        bottom: 'calc(100% - 26px)', // bottom tucks 26px behind the card's top
         background: '#f6f6f6',
-        borderRadius: 30,
-        padding: '14px 0',
+        borderRadius: 34,
+        padding: '36px 0 52px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
