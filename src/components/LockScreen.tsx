@@ -3,6 +3,7 @@ import {AbsoluteFill, staticFile} from 'remotion';
 import {theme} from '../util';
 import {LockScreenData} from '../lockscreen';
 import {clockFont} from '../clockfont';
+import {uiFont} from '../uifont';
 
 /**
  * iOS 26 "Liquid Glass" lock screen used as the video intro. The clock is real
@@ -13,7 +14,9 @@ import {clockFont} from '../clockfont';
  * guest's photo, name, a subtitle and a preview of their first message.
  */
 
-const SF = `-apple-system, "SF Pro Display", "SF Pro Rounded", ${theme.font}`;
+const SF = `${uiFont}, -apple-system, "SF Pro Display", ${theme.font}`;
+/** The fixed brand label shown where the date normally sits. */
+const TOP_LABEL = 'ProProManager';
 
 /** The Airbnb "Bélo" mark (simple-icons path), white on the red app badge. */
 const AirbnbBelo: React.FC<{size: number}> = ({size}) => (
@@ -245,21 +248,32 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
       {/* stretch everything together so the mask + filter + rim stay aligned */}
       <div style={{position: 'absolute', inset: 0, transform: `scaleY(${CLOCK_SY})`, transformOrigin: 'center top'}}>
         <div style={{position: 'relative', width: CLOCK_W, height: CLOCK_H0}}>
-          {/* glass body: refraction + specular lighting, clipped to the digits */}
+          {/* glass body: refraction + specular lighting + a frosty blur, clipped
+              to the digits */}
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              backdropFilter: `url(#${fid})`,
-              WebkitBackdropFilter: `url(#${fid})`,
+              backdropFilter: `url(#${fid}) blur(7px) brightness(1.06)`,
+              WebkitBackdropFilter: `url(#${fid}) blur(7px) brightness(1.06)`,
               ...maskProps,
             }}
           />
-          {/* a whisper of frost so the digit body reads on light wallpapers too */}
-          <div style={{position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.07)', ...maskProps}} />
-          {/* a crisp thin rim for the polished glass edge */}
+          {/* LIGHT glassmorphism fill — a soft white frosted body (top-lit) that
+              makes the digits read as bright frosted glass; the specular glints
+              still shine through */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.22) 38%, rgba(255,255,255,0.16) 70%, rgba(255,255,255,0.28) 100%)',
+              ...maskProps,
+            }}
+          />
+          {/* a crisp bright rim for the polished glass edge */}
           <svg width={CLOCK_W} height={CLOCK_H0} style={{position: 'absolute', inset: 0, overflow: 'visible'}}>
-            <text {...textAttrs} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1.6">
+            <text {...textAttrs} fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8">
               {time}
             </text>
           </svg>
@@ -309,7 +323,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
 
       {/* date + glass clock + notification, stacked from the top third */}
       <div style={{position: 'absolute', top: 188, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-        <span style={{fontFamily: SF, fontSize: 38, fontWeight: 600, color: 'rgba(255,255,255,0.92)', marginBottom: 4}}>{data.dateLabel}</span>
+        <span style={{fontFamily: SF, fontSize: 40, fontWeight: 600, color: 'rgba(255,255,255,0.95)', letterSpacing: 0.3, marginBottom: 6}}>{TOP_LABEL}</span>
         <GlassClock time={data.time} />
 
         {/* Airbnb push — Liquid Glass banner, placed just BELOW the clock */}
