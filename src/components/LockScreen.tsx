@@ -85,24 +85,112 @@ const StatusRight: React.FC<{battery: number; charging: boolean}> = ({battery, c
   );
 };
 
-/**
- * The Liquid-Glass clock. iOS 26's lock clock is tall, near-monoline, and the
- * digits are *transparent glass tubes*: the wallpaper shows through (refraction
- * via a backdrop blur clipped to the digits), each stroke has a bright top rim
- * + a soft underside shadow (the cylinder), and a diagonal specular streak.
- * The whole thing is stretched vertically (scaleY) to match the OS proportions.
- */
-const GlassClock: React.FC<{time: string}> = ({time}) => {
-  const FS = 360; // base glyph size (pre-stretch)
-  const SY = 1.72; // vertical stretch → tall iOS digits
-  const LS = -6; // letter spacing
-  const H0 = Math.round(FS * 1.0); // unstretched content height
-  const H = Math.round(H0 * SY); // visual height after stretch
+// ── Liquid-Glass clock ──────────────────────────────────────────────────────
+// Real refraction, the way Apple does it (and the kube.io / dashersw technique):
+// build a DISPLACEMENT MAP from the digit shapes — a normal map whose R/G channels
+// encode how far to bend the light at each pixel (zero in the flat interior, max
+// at the rounded edges, like a glass lip) — then feed it to an SVG
+// <feDisplacementMap> applied as `backdrop-filter: url(#id)` so the wallpaper is
+// physically warped *through* the glass. A thin bright rim + a soft specular
+// highlight finish it. No fake bevel / text-shadow.
 
-  const cf = clockFont; // 'PoppinsClock'
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='1080' height='${H0}'><text x='540' y='${
-    H0 / 2
-  }' font-family='${cf}' font-weight='500' font-size='${FS}' letter-spacing='${LS}' text-anchor='middle' dominant-baseline='central'>${time}</text></svg>`;
+const CLOCK_FS = 360; // glyph size (pre-stretch)
+const CLOCK_SY = 1.7; // vertical stretch → tall iOS digits
+const CLOCK_LS = -6; // letter spacing
+const CLOCK_H0 = 380; // unstretched box height
+const CLOCK_W = 1080;
+
+/**
+ * Render the digits to an offscreen canvas, blur to a height field, then encode
+ * its gradient as a refraction normal map (R = x-bend, G = y-bend, 128 = none).
+ * Returned as a PNG data URL for an <feImage>. Memoised by the time string.
+ */
+const buildClockDisplacement = (time: string): string => {
+  if (typeof document === 'undefined') return '';
+  const W = CLOCK_W;
+  const H = CLOCK_H0;
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const ctx = c.getContext('2d');
+  if (!ctx) return '';
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // @ts-expect-error letterSpacing is supported in Chromium canvas
+  ctx.letterSpacing = `${CLOCK_LS}px`;
+  ctx.font = `500 ${CLOCK_FS}px '${clockFont}', sans-serif`;
+  ctx.fillText(time, W / 2, H / 2 + 4);
+
+  const N = W * H;
+  const src = ctx.getImageData(0, 0, W, H).data;
+  const h = new Float32Array(N);
+  for (let i = 0; i < N; i++) h[i] = src[i * 4] / 255; // coverage (white digits)
+
+  // separable box blur (two passes) → smooth height field with soft edges
+  const r = 12;
+  const blur1D = (inp: Float32Array, out: Float32Array, horizontal: boolean) => {
+    const len = 2 * r + 1;
+    if (horizontal) {
+      for (let y = 0; y < H; y++) {
+        const row = y * W;
+        let sum = 0;
+        for (let k = -r; k <= r; k++) sum += inp[row + Math.min(W - 1, Math.max(0, k))];
+        for (let x = 0; x < W; x++) {
+          out[row + x] = sum / len;
+          const add = inp[row + Math.min(W - 1, x + r + 1)];
+          const sub = inp[row + Math.max(0, x - r)];
+          sum += add - sub;
+        }
+      }
+    } else {
+      for (let x = 0; x < W; x++) {
+        let sum = 0;
+        for (let k = -r; k <= r; k++) sum += inp[Math.min(H - 1, Math.max(0, k)) * W + x];
+        for (let y = 0; y < H; y++) {
+          out[y * W + x] = sum / len;
+          const add = inp[Math.min(H - 1, y + r + 1) * W + x];
+          const sub = inp[Math.max(0, y - r) * W + x];
+          sum += add - sub;
+        }
+      }
+    }
+  };
+  const t1 = new Float32Array(N);
+  const t2 = new Float32Array(N);
+  blur1D(h, t1, true);
+  blur1D(t1, t2, false);
+
+  // gradient of the height field → bend vectors (strong at edges, ~0 inside)
+  const out = ctx.createImageData(W, H);
+  const o = out.data;
+  const GAIN = 900; // how hard the edge bends the light
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      const gx = t2[i + (x < W - 1 ? 1 : 0)] - t2[i - (x > 0 ? 1 : 0)];
+      const gy = t2[i + (y < H - 1 ? W : 0)] - t2[i - (y > 0 ? W : 0)];
+      o[i * 4] = Math.max(0, Math.min(255, 128 - gx * GAIN)); // R: x-bend (toward edge)
+      o[i * 4 + 1] = Math.max(0, Math.min(255, 128 - gy * GAIN)); // G: y-bend
+      o[i * 4 + 2] = 128;
+      o[i * 4 + 3] = 255;
+    }
+  }
+  ctx.putImageData(out, 0, 0);
+  return c.toDataURL();
+};
+
+const GlassClock: React.FC<{time: string}> = ({time}) => {
+  const H = Math.round(CLOCK_H0 * CLOCK_SY);
+  const dispUrl = React.useMemo(() => buildClockDisplacement(time), [time]);
+  const fid = `clockGlass_${time.replace(/\D/g, '')}`;
+
+  // digit mask (shared by the glass body + rim)
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${CLOCK_W}' height='${CLOCK_H0}'><text x='${
+    CLOCK_W / 2
+  }' y='${CLOCK_H0 / 2 + 4}' font-family='${clockFont}' font-weight='500' font-size='${CLOCK_FS}' letter-spacing='${CLOCK_LS}' text-anchor='middle' dominant-baseline='central'>${time}</text></svg>`;
   const mask = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
   const maskProps: React.CSSProperties = {
     WebkitMaskImage: mask,
@@ -118,52 +206,46 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontFamily: cf,
+    fontFamily: clockFont,
     fontWeight: 500,
-    fontSize: FS,
-    letterSpacing: LS,
+    fontSize: CLOCK_FS,
+    letterSpacing: CLOCK_LS,
   };
 
   return (
-    <div style={{width: 1080, height: H, position: 'relative'}}>
-      {/* stretch everything together so the digit mask + faces stay aligned */}
-      <div style={{position: 'absolute', inset: 0, transform: `scaleY(${SY})`, transformOrigin: 'center top'}}>
-        <div style={{position: 'relative', width: 1080, height: H0}}>
-          {/* refraction body: the wallpaper seen THROUGH the glass — gently
-              blurred + magnified (lensing) and a touch brighter. Kept subtle so
-              the digits stay transparent and rim-defined, like real glass. */}
+    <div style={{width: CLOCK_W, height: H, position: 'relative'}}>
+      {/* the SVG filter: refract the backdrop using the generated normal map */}
+      <svg width="0" height="0" style={{position: 'absolute'}} aria-hidden>
+        <filter id={fid} x="-15%" y="-15%" width="130%" height="130%" colorInterpolationFilters="sRGB">
+          <feImage href={dispUrl} x="0" y="0" width={CLOCK_W} height={CLOCK_H0} preserveAspectRatio="none" result="dm" />
+          <feDisplacementMap in="SourceGraphic" in2="dm" scale="58" xChannelSelector="R" yChannelSelector="G" result="disp" />
+          <feGaussianBlur in="disp" stdDeviation="0.5" />
+        </filter>
+      </svg>
+
+      {/* stretch everything together so the mask + filter stay aligned */}
+      <div style={{position: 'absolute', inset: 0, transform: `scaleY(${CLOCK_SY})`, transformOrigin: 'center top'}}>
+        <div style={{position: 'relative', width: CLOCK_W, height: CLOCK_H0}}>
+          {/* glass body: the wallpaper REFRACTED through the digit shapes, with a
+              touch of frost + brightness so the digits read over flat areas too */}
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              backdropFilter: 'blur(7px) brightness(1.08) saturate(1.14) contrast(1.02)',
-              WebkitBackdropFilter: 'blur(7px) brightness(1.08) saturate(1.14) contrast(1.02)',
-              transform: 'scale(1.04)',
+              backdropFilter: `url(#${fid}) blur(2px) brightness(1.14) saturate(1.12)`,
+              WebkitBackdropFilter: `url(#${fid}) blur(2px) brightness(1.14) saturate(1.12)`,
               ...maskProps,
             }}
           />
-          {/* glass face: transparent body, thin bright rim + a subtle cylinder
-              top-highlight / underside-shadow so each stroke reads as a rod. */}
+          {/* faint frosted fill so the body is present even over flat colour */}
+          <div style={{...faceBase, color: 'rgba(255,255,255,0.045)'}}>{time}</div>
+          {/* bright glass rim — the lit edge, with a soft outer glow */}
           <div
             style={{
               ...faceBase,
               color: 'transparent',
-              WebkitTextStroke: '1.4px rgba(255,255,255,0.5)',
-              textShadow:
-                '0 -1.5px 1px rgba(255,255,255,0.42), 0 2px 4px rgba(0,0,0,0.28)',
-              filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.20))',
-            }}
-          >
-            {time}
-          </div>
-          {/* inner sheen: a very faint top-down gradient inside the strokes */}
-          <div
-            style={{
-              ...faceBase,
-              color: 'transparent',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.02) 40%, rgba(255,255,255,0) 64%, rgba(255,255,255,0.06) 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
+              WebkitTextStroke: '2px rgba(255,255,255,0.7)',
+              filter: 'drop-shadow(0 0 2px rgba(255,255,255,0.45)) drop-shadow(0 4px 14px rgba(0,0,0,0.18))',
             }}
           >
             {time}
@@ -174,7 +256,7 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
               ...faceBase,
               color: 'transparent',
               background:
-                'linear-gradient(118deg, transparent 33%, rgba(255,255,255,0.7) 46%, rgba(255,255,255,0.12) 53%, transparent 66%)',
+                'linear-gradient(118deg, transparent 34%, rgba(255,255,255,0.55) 46%, rgba(255,255,255,0.08) 53%, transparent 64%)',
               WebkitBackgroundClip: 'text',
               backgroundClip: 'text',
               mixBlendMode: 'screen',
