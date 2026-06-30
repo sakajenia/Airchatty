@@ -245,36 +245,32 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
         <span style={{fontFamily: SF, fontSize: 40, fontWeight: 600, color: 'rgba(255,255,255,0.95)', letterSpacing: 0.3, marginBottom: 18}}>{TOP_LABEL}</span>
         <GlassClock time={data.time} />
 
-        {/* Airbnb push — Liquid Glass banner, placed just BELOW the clock */}
+        {/* the liquid-glass displacement filter for the notification */}
+        <svg width="0" height="0" style={{position: 'absolute'}} aria-hidden>
+          <filter id="lg-filter" x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
+            <feTurbulence type="fractalNoise" baseFrequency="0.006 0.011" numOctaves="2" seed="7" result="noise" />
+            <feGaussianBlur in="noise" stdDeviation="1.1" result="sm" />
+            <feDisplacementMap in="SourceGraphic" in2="sm" scale="16" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </svg>
+        {/* Airbnb push — Liquid Glass banner (provided spec), below the clock */}
         <div style={{width: 1080 - 72, marginTop: 40}}>
         <div
           style={{
             position: 'relative',
             overflow: 'hidden',
-            borderRadius: 50,
-            background: 'rgba(28,30,38,0.40)',
-            backdropFilter: 'blur(60px) saturate(1.9) brightness(1.05)',
-            WebkitBackdropFilter: 'blur(60px) saturate(1.9) brightness(1.05)',
-            border: '1px solid rgba(255,255,255,0.28)',
+            borderRadius: 44,
+            background: 'rgba(255,255,255,0.12)',
+            backdropFilter: 'blur(1px) url(#lg-filter) blur(2px) saturate(1.6) brightness(1.12) contrast(1.04)',
+            WebkitBackdropFilter: 'blur(8px) saturate(1.8) brightness(1.15) contrast(1.05)',
             boxShadow:
-              '0 24px 70px rgba(0,0,0,0.30), inset 0 1.5px 1px rgba(255,255,255,0.40), inset 0 -2px 3px rgba(255,255,255,0.06)',
+              'inset 0 0 0 1px rgba(255,255,255,0.15), inset 1.5px 1.5px 0 rgba(255,255,255,0.5), inset 0 0 12px rgba(255,255,255,0.2), 0 8px 32px rgba(0,0,0,0.2)',
             padding: '28px 32px',
             display: 'flex',
             alignItems: 'center',
             gap: 26,
           }}
         >
-          {/* glassmorphism sheen — a soft diagonal highlight over the panel */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: 50,
-              background:
-                'linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.05) 26%, rgba(255,255,255,0) 56%, rgba(255,255,255,0.04) 100%)',
-              pointerEvents: 'none',
-            }}
-          />
           <div style={{position: 'relative', flexShrink: 0, width: 96, height: 96}}>
             <img
               src={resolveSrc(guestPhoto)}
@@ -300,18 +296,18 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
             </div>
           </div>
 
-          <div style={{flex: 1, minWidth: 0, color: '#fff'}}>
+          <div style={{flex: 1, minWidth: 0, color: '#1b1b1f'}}>
             <div style={{display: 'flex', alignItems: 'baseline', justifyContent: 'space-between'}}>
-              <span style={{fontFamily: SF, fontSize: 38, fontWeight: 700, letterSpacing: -0.3}}>{guestName}</span>
-              <span style={{fontFamily: SF, fontSize: 30, fontWeight: 500, color: 'rgba(235,235,240,0.55)', flexShrink: 0, marginLeft: 12}}>now</span>
+              <span style={{fontFamily: SF, fontSize: 38, fontWeight: 700, letterSpacing: -0.3, textShadow: '0 1px 1px rgba(255,255,255,0.35)'}}>{guestName}</span>
+              <span style={{fontFamily: SF, fontSize: 30, fontWeight: 500, color: 'rgba(40,40,50,0.5)', flexShrink: 0, marginLeft: 12}}>now</span>
             </div>
-            <div style={{fontFamily: SF, fontSize: 36, fontWeight: 700, letterSpacing: -0.3, marginTop: 2}}>{guestSubtitle}</div>
+            <div style={{fontFamily: SF, fontSize: 36, fontWeight: 700, letterSpacing: -0.3, marginTop: 2, textShadow: '0 1px 1px rgba(255,255,255,0.35)'}}>{guestSubtitle}</div>
             <div
               style={{
                 fontFamily: SF,
                 fontSize: 36,
                 fontWeight: 400,
-                color: 'rgba(238,238,242,0.92)',
+                color: 'rgba(28,28,34,0.82)',
                 marginTop: 4,
                 display: '-webkit-box',
                 WebkitLineClamp: 2,
