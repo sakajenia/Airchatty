@@ -18,13 +18,6 @@ const SF = `${uiFont}, -apple-system, "SF Pro Display", ${theme.font}`;
 /** The fixed brand label shown where the date normally sits. */
 const TOP_LABEL = 'ProProManager';
 
-/** The Airbnb "Bélo" mark (simple-icons path), white on the red app badge. */
-const AirbnbBelo: React.FC<{size: number}> = ({size}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="#fff" aria-hidden>
-    <path d="M22.515 17.991c-.107-.255-.22-.512-.327-.745l-.155-.342-.018-.018C20.488 13.299 18.36 9.18 16.1 5.15l-.085-.155c-.227-.412-.46-.838-.7-1.27a4.69 4.69 0 0 0-.92-1.213A3.638 3.638 0 0 0 11.99 1.5a3.65 3.65 0 0 0-2.403.997c-.342.32-.65.728-.92 1.214-.24.43-.474.857-.7 1.27l-.086.154C5.628 9.18 3.494 13.3 1.98 16.88l-.024.06c-.107.25-.22.506-.327.762a4.844 4.844 0 0 0-.398 2.49 3.815 3.815 0 0 0 2.324 3.04 4.108 4.108 0 0 0 1.601.32c.18 0 .404-.024.583-.048a5.394 5.394 0 0 0 1.812-.642c.768-.43 1.504-1.05 2.336-1.948.832.898 1.574 1.518 2.336 1.948a5.394 5.394 0 0 0 1.812.642c.179.024.402.048.583.048a4.108 4.108 0 0 0 1.601-.32 3.815 3.815 0 0 0 2.324-3.04 4.844 4.844 0 0 0-.398-2.49zM12 19.94c-1.024-1.287-1.688-2.49-1.915-3.51-.095-.43-.107-.815-.06-1.16.036-.305.144-.576.305-.815.376-.535.998-.869 1.762-.869.763 0 1.397.334 1.762.87.16.238.268.51.304.814.048.345.036.73-.06 1.16-.226 1.002-.89 2.205-1.914 3.51zm8.95-.83a2.474 2.474 0 0 1-1.51 1.972 2.766 2.766 0 0 1-1.453.179 4.04 4.04 0 0 1-1.346-.477c-.643-.357-1.281-.893-2.026-1.69 1.176-1.453 1.893-2.789 2.166-3.98.13-.56.154-1.07.094-1.54a3.11 3.11 0 0 0-.555-1.376c-.62-.893-1.682-1.42-2.872-1.42s-2.252.527-2.872 1.42a3.11 3.11 0 0 0-.555 1.376c-.06.47-.036.98.094 1.54.273 1.19.99 2.527 2.166 3.98-.745.797-1.383 1.333-2.026 1.69a4.04 4.04 0 0 1-1.346.477 2.766 2.766 0 0 1-1.453-.179 2.474 2.474 0 0 1-1.51-1.971 3.353 3.353 0 0 1 .287-1.78c.083-.226.19-.453.297-.71l.024-.06c1.51-3.569 3.638-7.675 5.886-11.681l.086-.155c.226-.405.46-.83.7-1.244.226-.405.476-.78.78-1.07a2.156 2.156 0 0 1 1.493-.62c.572 0 1.103.227 1.493.62.305.29.555.665.78 1.07.24.415.475.84.7 1.244l.087.155c2.236 3.99 4.365 8.107 5.886 11.7l.012.012c.107.25.214.49.297.728a3.353 3.353 0 0 1 .3 1.769z" />
-  </svg>
-);
-
 /** Status-bar right cluster: cellular bars, wi-fi, battery pill (with %). */
 const StatusRight: React.FC<{battery: number; charging: boolean}> = ({battery, charging}) => {
   const fill = charging ? '#34c759' : battery <= 20 ? '#ff453a' : '#ffffff';
@@ -184,15 +177,16 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
 
   return (
     <div style={{width: CLOCK_W, height: CLOCK_H0, position: 'relative'}}>
-      {/* frosted translucent fill: backdrop blur(9px) + rgba(255,255,255,0.14),
+      {/* same liquid-glass style as the notification: displacement (#lg-filter)
+          + blur + saturate/brightness/contrast, on a light translucent tint,
           clipped to the digits (mask uses the real font, so no double text) */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          backdropFilter: 'blur(9px)',
-          WebkitBackdropFilter: 'blur(9px)',
-          background: 'rgba(255,255,255,0.14)',
+          backdropFilter: 'blur(2px) url(#lg-filter) blur(5px) saturate(1.7) brightness(1.12) contrast(1.04)',
+          WebkitBackdropFilter: 'blur(9px) saturate(1.8) brightness(1.15) contrast(1.05)',
+          background: 'rgba(255,255,255,0.12)',
           ...maskProps,
         }}
       />
@@ -277,23 +271,22 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
               style={{width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', display: 'block'}}
               alt=""
             />
-            <div
-              style={{
-                position: 'absolute',
-                left: -6,
-                bottom: -4,
-                width: 46,
-                height: 46,
-                borderRadius: 12,
-                background: '#FF385C',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
-              }}
+            {/* the real Airbnb app tile (vectorlogo.zone), 46×46 */}
+            <svg
+              width={46}
+              height={46}
+              viewBox="0 0 512 512"
+              style={{position: 'absolute', left: -6, bottom: -4, borderRadius: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.35)'}}
             >
-              <AirbnbBelo size={30} />
-            </div>
+              <rect width="512" height="512" rx="15%" fill="#ff5a5f" />
+              <path
+                fill="none"
+                stroke="#fff"
+                strokeWidth="23"
+                strokeLinejoin="round"
+                d="m255 83.7c-29 .1-40.6 23.9-40.6 23.9-36.2 66.5-70 134.2-101.2 203.2-17.2 38-4.6 68.2 14.8 84.5 36.8 31 82 13.4 126.5-38.7 34.3-40 49.8-73.2 48.3-100.6-1.3-23.9-15.8-43.7-47.9-43.7-47.3-.2-48.3 44.6-48.5 43.7 0 46.6 42.8 93.5 56 108.6 13.3 15.1 70.8 73.4 121.5 30 37.7-32.1 13.1-83.8 13.1-83.8-30.6-67.6-51-111.5-99.9-203.2 0 0-10.6-24-42.2-24v.1z"
+              />
+            </svg>
           </div>
 
           <div style={{flex: 1, minWidth: 0, color: '#1b1b1f'}}>
