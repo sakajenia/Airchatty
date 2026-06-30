@@ -1,4 +1,5 @@
 import React from 'react';
+import {SB_GLYPHS} from './statusGlyphs';
 
 /**
  * The official iPhone status-bar glyphs (cellular, wi-fi, battery), shared by
@@ -46,30 +47,20 @@ const TONES: Record<StatusTone, ToneSpec> = {
 const SF =
   '"SFPro", -apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif';
 
-/** Cellular strength — four rounded bars, `bars` of them bright, the rest dim. */
-const Cellular: React.FC<{tone: StatusTone; bars: number}> = ({tone, bars}) => {
-  const t = TONES[tone];
+/** Official iOS 27 glyph (cellular / wi-fi), tinted via the tone colour. The icon
+ *  heights track the battery (≈13pt native) so the cluster lines up exactly. */
+const SCALE = 28 / 13; // battery body is 28px tall here; 13pt native
+const SBIcon: React.FC<{name: keyof typeof SB_GLYPHS; tone: StatusTone}> = ({name, tone}) => {
+  const g = SB_GLYPHS[name];
   return (
-    <svg width="42" height="30" viewBox="0 0 42 30">
-      {[0, 1, 2, 3].map((i) => {
-        const h = 9 + i * 5.4;
-        return <rect key={i} x={i * 11} y={28 - h} width="8" height={h} rx="3" fill={t.fg} opacity={i < bars ? 1 : t.dim} />;
-      })}
+    <svg width={g.w * SCALE} height={g.h * SCALE} viewBox={g.viewBox} fill={TONES[tone].fg} style={{display: 'block'}}>
+      <path d={g.d} />
     </svg>
   );
 };
 
-/** The solid wi-fi fan. */
-const Wifi: React.FC<{tone: StatusTone}> = ({tone}) => {
-  const t = TONES[tone];
-  return (
-    <svg width="40" height="29" viewBox="0 0 30 22" fill={t.fg}>
-      <path d="M15 4.3c4.3 0 8.2 1.7 11 4.5a1.4 1.4 0 0 1 0 2l-.4.4a1.3 1.3 0 0 1-1.85.02A12.4 12.4 0 0 0 15 7.7 12.4 12.4 0 0 0 6.25 11.2 1.3 1.3 0 0 1 4.4 11.2L4 10.8a1.4 1.4 0 0 1 0-2A15.6 15.6 0 0 1 15 4.3z" />
-      <path d="M15 10.4c2.6 0 5 1 6.8 2.8a1.35 1.35 0 0 1-.02 1.95l-.43.42a1.25 1.25 0 0 1-1.77-.02A6.45 6.45 0 0 0 15 13.7a6.45 6.45 0 0 0-4.58 1.85 1.25 1.25 0 0 1-1.77.02l-.43-.42A1.35 1.35 0 0 1 8.2 13.2 9.6 9.6 0 0 1 15 10.4z" />
-      <path d="M15 16.1c1.05 0 2.02.42 2.72 1.12a1.3 1.3 0 0 1 .03 1.8l-1.78 1.86a1.32 1.32 0 0 1-1.94 0l-1.78-1.86a1.3 1.3 0 0 1 .03-1.8A3.83 3.83 0 0 1 15 16.1z" />
-    </svg>
-  );
-};
+const Cellular: React.FC<{tone: StatusTone}> = ({tone}) => <SBIcon name="cellular" tone={tone} />;
+const Wifi: React.FC<{tone: StatusTone}> = ({tone}) => <SBIcon name="wifi" tone={tone} />;
 
 /** The iOS charging bolt (solid white), as it sits inside the battery body. */
 const ChargeBolt: React.FC = () => (
@@ -140,15 +131,17 @@ const Battery: React.FC<{tone: StatusTone; level: number; charging: boolean}> = 
   );
 };
 
-/** The full right-hand cluster: cellular · wi-fi · battery. */
+/** The full right-hand cluster: cellular · wi-fi · battery (official glyphs). The
+ *  `bars` prop is accepted for compatibility but the official cellular icon is
+ *  full-strength, as in the reference. */
 export const StatusBarRight: React.FC<{
   tone: StatusTone;
   bars?: number;
   battery: number;
   charging: boolean;
-}> = ({tone, bars = 4, battery, charging}) => (
-  <div style={{display: 'flex', alignItems: 'center', gap: 16}}>
-    <Cellular tone={tone} bars={bars} />
+}> = ({tone, battery, charging}) => (
+  <div style={{display: 'flex', alignItems: 'center', gap: 15}}>
+    <Cellular tone={tone} />
     <Wifi tone={tone} />
     <Battery tone={tone} level={battery} charging={charging} />
   </div>

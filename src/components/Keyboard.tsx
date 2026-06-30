@@ -21,7 +21,6 @@ const KEY_R = px(8.5);
 const ROW_GAP = px(11);
 const KEY_GAP = px(6);
 const KEYS_PAD = px(6.67);
-const TOP_R = px(27);
 const TOP_PAD = px(24);
 const SUGG_H = px(25);
 const ROW2_PAD = px(20); // inset that centres a–l under q–p
@@ -143,8 +142,8 @@ export const Keyboard: React.FC<{
         background: 'rgba(209,212,219,0.82)',
         backdropFilter: 'blur(50px) saturate(150%)',
         WebkitBackdropFilter: 'blur(50px) saturate(150%)',
-        borderTopLeftRadius: TOP_R,
-        borderTopRightRadius: TOP_R,
+        // Airbnb's chat keeps the keyboard top edge straight (only the message
+        // field above is rounded) — so no top corner radius here.
         boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)',
         fontFamily: uiFont,
         display: 'flex',
