@@ -17,7 +17,7 @@ import {ChatHeader, StatusBar, HeaderAvatar} from './components/ChatHeader';
 import {InputBar} from './components/InputBar';
 import {Composer} from './components/Composer';
 import {Keyboard, keyForChar, layoutForChar, suggestionsFor, KEYBOARD_HEIGHT, KbMode} from './components/Keyboard';
-import {MessageBubble} from './components/MessageBubble';
+import {MessageBubble, matureFrames} from './components/MessageBubble';
 import {TypingIndicator} from './components/TypingIndicator';
 import {DateSeparator} from './components/DateSeparator';
 import {WeideOutro} from './components/WeideOutro';
@@ -55,6 +55,32 @@ export const ChatReel: React.FC<ChatProps & {status?: ChatStatus}> = (props) => 
   const headerSubtitle = headerApt ? `${headerDate} • ${headerApt}` : headerDate;
 
   const visible = segments.filter((s) => frame >= s.revealFrame);
+
+  // The avatar sits on ONE message per sender-group: the newest visible member
+  // that has finished its ghost fade-in. Until the newest matures, the avatar
+  // stays on the previous message, then JUMPS onto the new one — exactly the
+  // behaviour in the reference recording of the real app.
+  const mature = matureFrames(fps);
+  const avatarOwner = new Set<number>();
+  {
+    let group: MessageSeg[] = [];
+    const closeGroup = () => {
+      if (!group.length) return;
+      const matured = group.filter((m) => frame >= m.revealFrame + mature);
+      const owner = matured.length ? matured[matured.length - 1] : group[0];
+      avatarOwner.add(owner.index);
+      group = [];
+    };
+    for (const s of visible) {
+      if (s.kind !== 'message' || s.isYou) {
+        closeGroup();
+        continue;
+      }
+      if (group.length && group[group.length - 1].sender !== s.sender) closeGroup();
+      group.push(s);
+    }
+    closeGroup();
+  }
   const typing = segments.find(
     (s) =>
       s.kind === 'message' &&
@@ -186,6 +212,7 @@ export const ChatReel: React.FC<ChatProps & {status?: ChatStatus}> = (props) => 
                   avatarSrc={p.avatar}
                   isFirstOfGroup={s.isFirstOfGroup}
                   isLastOfGroup={s.isLastOfGroup}
+                  showAvatar={avatarOwner.has(s.index)}
                   readReceipt={s.index === readIdx ? readReceiptText : undefined}
                 />
               );

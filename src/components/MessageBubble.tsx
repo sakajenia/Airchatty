@@ -1,5 +1,5 @@
 import React from 'react';
-import {spring, useCurrentFrame, useVideoConfig} from 'remotion';
+import {interpolate, useCurrentFrame, useVideoConfig} from 'remotion';
 import {theme, useNaturalHeight} from '../util';
 import {Avatar} from './Avatar';
 import {EmojiText} from './EmojiText';
@@ -16,10 +16,21 @@ export type ChatBubbleProps = {
   avatarSrc: string;
   isFirstOfGroup: boolean;
   isLastOfGroup: boolean;
+  /** Avatar shown on THIS bubble right now (it sits on the group's newest
+   *  matured message and jumps as new ones arrive — like the real app). */
+  showAvatar?: boolean;
   readReceipt?: string;
 };
 
-const AVATAR = 56;
+const AVATAR = 76; // measured from the reference recording (~90px @1320)
+
+// Entrance timing measured frame-by-frame from the real Airbnb recording:
+// the bubble appears instantly IN PLACE with its content "ghosted" (~32%
+// opacity — light-grey text), holds ~0.2s, then the content fades to full and
+// the avatar jumps onto it. No spring, no slide, no scale.
+export const GHOST_HOLD = 0.2; // seconds at reduced opacity
+export const GHOST_FADE = 0.13; // seconds fading to full
+export const matureFrames = (fps: number) => Math.round((GHOST_HOLD + GHOST_FADE) * fps);
 
 const ReactionBadge: React.FC<{emoji: string; isYou: boolean; revealFrame: number}> = ({
   emoji,
@@ -91,6 +102,7 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
   avatarSrc,
   isFirstOfGroup,
   isLastOfGroup,
+  showAvatar = isLastOfGroup,
   readReceipt,
 }) => {
   const frame = useCurrentFrame();
@@ -98,8 +110,17 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
   const [contentRef, naturalH] = useNaturalHeight();
 
   const local = frame - revealFrame;
-  const open = spring({frame: local, fps, config: {damping: 200, mass: 0.6}, durationInFrames: 8});
-  const pop = spring({frame: local, fps, config: {damping: 14, mass: 0.7}});
+  // The list makes room almost instantly (the ghost is already in its final
+  // position on the very next recording frame).
+  const open = interpolate(local, [0, 3], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  // Content: ghost (32%) → hold → fade to full. Sent messages skip the ghost
+  // hold — your own message just fades in quickly.
+  const hold = Math.round((isYou ? 0 : GHOST_HOLD) * fps);
+  const fade = Math.round(GHOST_FADE * fps);
+  const contentOpacity = interpolate(local, [0, 1, hold + 1, hold + fade], [0, 0.32, 0.32, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
   const measured = naturalH != null;
   const wrapperHeight = measured ? naturalH * open : undefined;
 
@@ -107,10 +128,7 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
     <div
       style={{
         width: 470,
-        borderRadius: 36,
-        ...(isYou
-          ? {borderBottomRightRadius: isLastOfGroup ? 14 : 36}
-          : {borderBottomLeftRadius: isLastOfGroup ? 14 : 36}),
+        borderRadius: 44,
         overflow: 'hidden',
         background: theme.incomingBubble,
         lineHeight: 0,
@@ -122,11 +140,9 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
     <div
       style={{
         maxWidth: 740,
-        padding: '24px 32px',
-        borderRadius: 42,
-        ...(isYou
-          ? {borderBottomRightRadius: isLastOfGroup ? 14 : 42}
-          : {borderBottomLeftRadius: isLastOfGroup ? 14 : 42}),
+        padding: '20px 30px',
+        // uniform squircle-round corners, like the real app (no flattened corner)
+        borderRadius: 50,
         background: isYou ? theme.outgoingBubble : theme.incomingBubble,
         color: isYou ? theme.outgoingText : theme.incomingText,
         fontSize: 42,
@@ -137,7 +153,9 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
         wordBreak: 'break-word',
       }}
     >
-      <EmojiText text={text} />
+      <span style={{opacity: contentOpacity}}>
+        <EmojiText text={text} />
+      </span>
     </div>
   );
 
@@ -172,18 +190,16 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
       <div
         ref={contentRef}
         style={{
-          paddingTop: isFirstOfGroup ? 30 : 8,
+          paddingTop: isFirstOfGroup ? 30 : 18,
           opacity: measured ? 1 : 0,
-          transform: `translateY(${(1 - pop) * 22}px) scale(${0.96 + pop * 0.04})`,
-          transformOrigin: isYou ? 'bottom right' : 'bottom left',
         }}
       >
         {isYou ? (
           column
         ) : (
-          <div style={{display: 'flex', alignItems: 'flex-end', gap: 16}}>
+          <div style={{display: 'flex', alignItems: 'flex-end', gap: 25}}>
             <div style={{width: AVATAR, flexShrink: 0}}>
-              {isLastOfGroup && <Avatar name={senderName} src={avatarSrc} size={AVATAR} />}
+              {showAvatar && <Avatar name={senderName} src={avatarSrc} size={AVATAR} />}
             </div>
             {column}
           </div>

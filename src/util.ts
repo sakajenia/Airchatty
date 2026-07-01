@@ -20,8 +20,8 @@ export const theme = {
   online: '#34c759',
 
   // Chat-specific
-  incomingBubble: '#e8e8e8', // slightly darker grey bubble for the other people
-  incomingText: '#222222',
+  incomingBubble: '#f7f7f8', // very light grey — sampled from the real app recording
+  incomingText: '#262626',
   outgoingBubble: '#3a3a3a', // dark charcoal bubble for "you" (NOT pink)
   outgoingText: '#ffffff',
 
