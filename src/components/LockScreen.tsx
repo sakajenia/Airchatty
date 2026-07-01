@@ -37,15 +37,19 @@ const CLOCK_H0 = 540; // box height (contains the tall glyphs)
 const CLOCK_W = 1080;
 
 /**
- * Build the glass artwork from the REAL clock font via canvas (so it matches the
- * font everywhere — the old data-URI SVG mask silently fell back to a different
- * font, which is what produced the overlapping "double" text). Returns:
- *  • `mask` — white digit shapes, used to clip the frosted backdrop fill;
- *  • `glow` — the inner white glow + 1px border (the provided glassmorphism
- *             `inset 0 0 28px 14px` + `border`), drawn on the SAME shape.
+ * Build the Liquid Glass clock artwork from the REAL clock font via canvas.
+ * The layer recipe follows the iOS GlassKit surface stack (GlassStyle.swift of
+ * the liquid-glass-ios-system reference):
+ *   1. drop shadow  — black ~22%, blurred, offset down (depth cue)
+ *   2. frosted body — ultraThinMaterial ≈ backdrop blur + light tint (masked)
+ *   3. lens highlight — radial white ~14% → clear from top-leading, soft-light
+ *   4. edge stroke  — 1px white ~18–70%, brighter on top (light direction)
+ * Returns data-URLs: the digit `mask`, the `shadow`, `highlight` and `edge`.
  */
-const buildClockGlass = (time: string): {mask: string; glow: string} => {
-  if (typeof document === 'undefined') return {mask: '', glow: ''};
+const buildClockGlass = (
+  time: string,
+): {mask: string; shadow: string; highlight: string; edge: string} => {
+  if (typeof document === 'undefined') return {mask: '', shadow: '', highlight: '', edge: ''};
   const W = CLOCK_W;
   const H = CLOCK_H0;
   const font = `${CLOCK_WT} ${CLOCK_FS}px '${clockFont}', sans-serif`;
@@ -63,74 +67,88 @@ const buildClockGlass = (time: string): {mask: string; glow: string} => {
     return [c, c.getContext('2d') as CanvasRenderingContext2D] as const;
   };
 
-  // (1) the digit shapes
+  // (1) the digit shapes (mask for the frosted body)
   const [shapeC, s] = make();
   setup(s);
   s.fillStyle = '#fff';
   s.fillText(time, W / 2, H / 2);
   const mask = shapeC.toDataURL();
 
-  // (2) inner glow: white everywhere EXCEPT the digits, blurred, then kept only
-  // inside the digits → a glow that hugs the inner edges.
-  const [outC, o] = make();
-  o.fillStyle = '#fff';
-  o.fillRect(0, 0, W, H);
-  o.globalCompositeOperation = 'destination-out';
-  o.drawImage(shapeC, 0, 0);
+  // (2) drop shadow: the silhouette, blurred and pushed down — GlassStyle's
+  // shadow(black 22%, radius 18, y 10) scaled to this canvas (~2.7×).
+  const [shC, sh] = make();
+  sh.filter = 'blur(26px)';
+  sh.globalAlpha = 0.32;
+  setup(sh);
+  sh.fillStyle = '#000';
+  sh.fillText(time, W / 2, H / 2 + 26);
+  const shadow = shC.toDataURL();
 
-  const [glowC, g] = make();
-  g.filter = 'blur(14px)';
-  g.drawImage(outC, 0, 0);
-  g.filter = 'none';
-  g.globalCompositeOperation = 'destination-in';
-  g.drawImage(shapeC, 0, 0);
-  // intensify the glow (the spec's 1.4 alpha is very strong)
-  g.globalCompositeOperation = 'lighter';
-  g.drawImage(glowC, 0, 0);
-  // 1px glass border
-  g.globalCompositeOperation = 'source-over';
-  setup(g);
-  g.lineWidth = 2.4;
-  g.strokeStyle = 'rgba(255,255,255,0.5)';
-  g.strokeText(time, W / 2, H / 2);
-  const glow = glowC.toDataURL();
+  // (3) lens highlight: radial white → clear from the top-leading corner of
+  // the text block, kept inside the glyphs (blended soft-light in CSS).
+  const [hiC, hi] = make();
+  setup(hi);
+  const grad = hi.createRadialGradient(W * 0.22, H * 0.05, W * 0.02, W * 0.22, H * 0.05, W * 0.72);
+  grad.addColorStop(0, 'rgba(255,255,255,0.85)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  hi.fillStyle = grad;
+  hi.fillText(time, W / 2, H / 2);
+  const highlight = hiC.toDataURL();
 
-  return {mask, glow};
+  // (4) edge stroke: thin rim, brighter where the light comes from (top),
+  // fading toward the bottom — no uniform neon glow.
+  const [edC, ed] = make();
+  setup(ed);
+  const rim = ed.createLinearGradient(0, H * 0.12, 0, H * 0.88);
+  rim.addColorStop(0, 'rgba(255,255,255,0.85)');
+  rim.addColorStop(0.5, 'rgba(255,255,255,0.38)');
+  rim.addColorStop(1, 'rgba(255,255,255,0.55)');
+  ed.lineWidth = 2.6;
+  ed.strokeStyle = rim;
+  ed.strokeText(time, W / 2, H / 2);
+  const edge = edC.toDataURL();
+
+  return {mask, shadow, highlight, edge};
 };
 
 /**
- * The lock clock: one coherent glass digit string. A backdrop-blur + light
- * translucent fill clipped to the digit shapes, plus the inner glow + border —
- * all derived from the same real font. No stretch, no overlapping text.
+ * The lock clock: one coherent Liquid Glass digit string — depth shadow, a
+ * refractive frosted body clipped to the digits, a top-leading lens highlight
+ * (soft-light) and a directional 1px rim. All from the same real font.
  */
 const GlassClock: React.FC<{time: string}> = ({time}) => {
-  const {mask: maskUrl, glow: glowUrl} = React.useMemo(() => buildClockGlass(time), [time]);
+  const art = React.useMemo(() => buildClockGlass(time), [time]);
   const maskProps: React.CSSProperties = {
-    WebkitMaskImage: `url(${maskUrl})`,
-    maskImage: `url(${maskUrl})`,
+    WebkitMaskImage: `url(${art.mask})`,
+    maskImage: `url(${art.mask})`,
     WebkitMaskSize: '100% 100%',
     maskSize: '100% 100%',
     WebkitMaskRepeat: 'no-repeat',
     maskRepeat: 'no-repeat',
   };
+  const layer: React.CSSProperties = {position: 'absolute', inset: 0};
 
   return (
     <div style={{width: CLOCK_W, height: CLOCK_H0, position: 'relative'}}>
-      {/* same liquid-glass style as the notification: displacement (#lg-filter)
-          + blur + saturate/brightness/contrast, on a light translucent tint,
-          clipped to the digits (mask uses the real font, so no double text) */}
+      {/* 1 · depth shadow under the glass */}
+      {art.shadow ? <img src={art.shadow} width={CLOCK_W} height={CLOCK_H0} style={layer} alt="" /> : null}
+      {/* 2 · frosted refractive body (ultraThinMaterial + displacement), masked
+             to the digits — a LIGHT tint so the wallpaper shows through */}
       <div
         style={{
-          position: 'absolute',
-          inset: 0,
-          backdropFilter: 'blur(2px) url(#lg-filter) blur(5px) saturate(1.7) brightness(1.12) contrast(1.04)',
-          WebkitBackdropFilter: 'blur(9px) saturate(1.8) brightness(1.15) contrast(1.05)',
-          background: 'rgba(255,255,255,0.12)',
+          ...layer,
+          backdropFilter: 'blur(3px) url(#lg-filter) blur(11px) saturate(1.65) brightness(1.08)',
+          WebkitBackdropFilter: 'blur(14px) saturate(1.65) brightness(1.08)',
+          background: 'rgba(255,255,255,0.10)',
           ...maskProps,
         }}
       />
-      {/* inner white glow + border, on the exact same shape */}
-      {glowUrl ? <img src={glowUrl} width={CLOCK_W} height={CLOCK_H0} style={{position: 'absolute', inset: 0}} alt="" /> : null}
+      {/* 3 · lens highlight, soft-light so it reads as light on glass */}
+      {art.highlight ? (
+        <img src={art.highlight} width={CLOCK_W} height={CLOCK_H0} style={{...layer, mixBlendMode: 'soft-light', opacity: 0.95}} alt="" />
+      ) : null}
+      {/* 4 · directional 1px rim */}
+      {art.edge ? <img src={art.edge} width={CLOCK_W} height={CLOCK_H0} style={layer} alt="" /> : null}
     </div>
   );
 };
