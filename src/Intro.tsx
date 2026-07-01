@@ -29,26 +29,29 @@ export type IntroData = {
 
 export type IntroChatProps = ChatProps & {intro: IntroData};
 
-/** How long (frames) each intro phase lasts, given fps + the audio marker. */
+/** The black disclaimer holds EXACTLY this long, then hard-cuts to the lock. */
+export const BLACK_SEC = 2.0;
+
+/**
+ * How long (frames) each intro phase lasts, given fps + the audio marker.
+ * The notification sound starts a beat AFTER the video does, so that its
+ * embedded marker lands exactly on the 2-second cut to the lock screen.
+ */
 export const introTiming = (fps: number, markerSec: number) => {
-  const marker = Math.round(markerSec * fps);
+  const audioStart = Math.max(0, Math.round((BLACK_SEC - markerSec) * fps));
+  const marker = audioStart + Math.round(markerSec * fps); // = the hard cut (~2s)
   const lockHold = Math.round(fps * 2.0); // dwell on the lock screen + notification
   const unlock = Math.round(fps * 0.62); // the unlock swipe-up
-  const fade = Math.round(fps * 0.18); // black → lock crossfade
   const unlockStart = marker + lockHold;
   const chatStart = unlockStart; // chat is revealed by the unlock
-  return {marker, lockHold, unlock, fade, unlockStart, chatStart};
+  return {audioStart, marker, lockHold, unlock, unlockStart, chatStart};
 };
 
 export const IntroChat: React.FC<IntroChatProps> = (props) => {
   const {intro} = props;
   const {fps, height} = useVideoConfig();
   const frame = useCurrentFrame();
-  const {marker, unlock, unlockStart, chatStart} = introTiming(fps, intro.markerSec);
-
-  // The disclaimer text gently fades in over the black. The cut to the lock
-  // screen at the marker is HARD — no dissolve (per the brief).
-  const textIn = interpolate(frame, [0, Math.round(fps * 0.4)], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  const {audioStart, marker, unlock, unlockStart, chatStart} = introTiming(fps, intro.markerSec);
 
   // unlock: lock screen slides up + fades; the chat zooms from 1.06 → 1.0 + fades in
   const up = interpolate(frame, [unlockStart, unlockStart + unlock], [0, 1], {
@@ -84,7 +87,10 @@ export const IntroChat: React.FC<IntroChatProps> = (props) => {
 
   return (
     <AbsoluteFill style={{background: '#000'}}>
-      <Audio src={staticFile('notify-intro.wav')} />
+      {/* the sound starts late so its marker lands exactly on the 2s cut */}
+      <Sequence from={audioStart} layout="none">
+        <Audio src={staticFile('notify-intro.wav')} />
+      </Sequence>
 
       {/* the chat — mounted early (hidden) so its first bubble is settled by the
           unlock, then revealed as the lock screen slides away */}
@@ -108,7 +114,8 @@ export const IntroChat: React.FC<IntroChatProps> = (props) => {
         </AbsoluteFill>
       )}
 
-      {/* black disclaimer card on top, until the (hard) cut at the marker */}
+      {/* black disclaimer card on top — text fixed from frame 0 (NO dissolve
+          anywhere), gone with a hard cut at the marker */}
       {showBlack && (
         <AbsoluteFill style={{background: '#000', alignItems: 'center', justifyContent: 'center'}}>
           <div
@@ -122,7 +129,6 @@ export const IntroChat: React.FC<IntroChatProps> = (props) => {
               lineHeight: 1.55,
               letterSpacing: 0.2,
               color: 'rgba(255,255,255,0.92)',
-              opacity: textIn,
             }}
           >
             {intro.disclaimer}
