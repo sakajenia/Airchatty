@@ -36,12 +36,33 @@ import {pickDisclaimer} from '../src/introDisclaimers';
 /** Seconds into notify-intro.wav where the cue cuts from black to the lock screen. */
 const INTRO_MARKER_SEC = 1.44;
 
+/** Whether an image wallpaper is dark BEHIND the notification (mid-screen band),
+ *  so the lock-screen notification can switch to light text. Sampled once. */
+const imgDarkCache: Record<string, boolean> = {};
+function imageIsDark(rel: string): boolean {
+  if (rel in imgDarkCache) return imgDarkCache[rel];
+  let dark = false;
+  try {
+    const abs = path.join(ROOT, 'public', rel);
+    const py =
+      `from PIL import Image;im=Image.open(${JSON.stringify(abs)}).convert('L');w,h=im.size;` +
+      `c=im.crop((int(w*0.06),int(h*0.42),int(w*0.94),int(h*0.55)));d=list(c.getdata());print(sum(d)/len(d))`;
+    const out = execSync(`python3 -c ${JSON.stringify(py)}`, {encoding: 'utf8'}).trim();
+    dark = parseFloat(out) < 130;
+  } catch {
+    dark = false; // if we can't sample, assume a light image → dark text
+  }
+  imgDarkCache[rel] = dark;
+  return dark;
+}
+
 /**
  * Pick a lock-screen wallpaper for a video: any image in public/wallpapers/ plus
  * the built-in gradients, chosen deterministically from the seed so each video
- * differs but always renders the same.
+ * differs but always renders the same. Returns the value + whether it's dark
+ * (drives the notification text colour).
  */
-function pickWallpaper(seed: string): string {
+function pickWallpaper(seed: string): {wallpaper: string; dark: boolean} {
   let imgs: string[] = [];
   try {
     imgs = fs
@@ -51,13 +72,16 @@ function pickWallpaper(seed: string): string {
   } catch {
     /* none yet */
   }
-  const pool = [...imgs, ...WALLPAPERS];
+  const pool = [
+    ...imgs.map((f) => ({wallpaper: f, dark: imageIsDark(f)})),
+    ...WALLPAPERS.map((w) => ({wallpaper: w.css, dark: w.dark})),
+  ];
   let h = 2166136261 >>> 0;
   for (let i = 0; i < seed.length; i++) {
     h ^= seed.charCodeAt(i);
     h = Math.imul(h, 16777619) >>> 0;
   }
-  return pool[h % pool.length] || WALLPAPERS[0];
+  return pool[h % pool.length] || {wallpaper: WALLPAPERS[0].css, dark: WALLPAPERS[0].dark};
 }
 
 /** Download the Twemoji SVG for every emoji used so they render in full colour. */
@@ -282,7 +306,8 @@ async function main() {
   for (let g = 0; g < groups.length; g++) {
     const {chat, rows} = groups[g];
     const firstWith = (k: keyof Row) => rows.find((r) => r[k])?.[k] ?? '';
-    const guests = clamp(parseInt(firstWith('ospiti'), 10) || 2, 1, 6);
+    // Airbnb group threads are always host + at least TWO guests → min 2.
+    const guests = clamp(parseInt(firstWith('ospiti'), 10) || 2, 2, 6);
     const hostName = firstWith('host') || DEFAULT_PROPS.hostName;
     const hostAvatar = resolvePhoto(firstWith('foto_host')) || DEFAULT_PROPS.hostAvatar;
 
@@ -333,11 +358,12 @@ async function main() {
     // name), and calculateMetadata (prepareIntroChat) fills the lock-screen
     // clock + Airbnb push from the first guest message — so the lock-screen time
     // always matches the conversation.
+    const wp = pickWallpaper(outName);
     const introProps: IntroChatProps = {
       ...props,
       intro: {
         disclaimer: pickDisclaimer(outName),
-        lock: {...lockScreenFor(outName), wallpaper: pickWallpaper(outName)},
+        lock: {...lockScreenFor(outName), wallpaper: wp.wallpaper, darkWallpaper: wp.dark},
         guestName: '',
         guestSubtitle: '',
         guestPhoto: '',

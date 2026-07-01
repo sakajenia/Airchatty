@@ -45,19 +45,22 @@ export const IT_CARRIERS = [
 // Each wallpaper places a LARGE bright orb right behind the clock (~58% 33%),
 // a secondary colour blob low, and a dark base. The bright orb is what the
 // glass clock refracts — you see it through the digits, like the reference.
-export const WALLPAPERS: string[] = [
+// `dark` = the area BEHIND the notification (below the clock) is dark, so the
+// notification must use light/white text.
+export type Wallpaper = {css: string; dark: boolean};
+export const WALLPAPERS: Wallpaper[] = [
   // rose + teal with a cool blue orb (mirrors the reference)
-  'radial-gradient(56% 40% at 58% 32%, rgba(150,200,225,0.9) 0%, rgba(120,175,205,0.32) 46%, rgba(120,175,205,0) 72%), radial-gradient(105% 92% at 86% 82%, #14525f 0%, #0c2e3a 50%, rgba(10,18,24,0) 86%), radial-gradient(112% 96% at 6% 3%, #b85572 0%, #5d2438 48%, #160d14 100%)',
+  {dark: true, css: 'radial-gradient(56% 40% at 58% 32%, rgba(150,200,225,0.9) 0%, rgba(120,175,205,0.32) 46%, rgba(120,175,205,0) 72%), radial-gradient(105% 92% at 86% 82%, #14525f 0%, #0c2e3a 50%, rgba(10,18,24,0) 86%), radial-gradient(112% 96% at 6% 3%, #b85572 0%, #5d2438 48%, #160d14 100%)'},
   // violet dusk with a lilac orb
-  'radial-gradient(56% 40% at 56% 33%, rgba(206,196,240,0.88) 0%, rgba(170,150,225,0.30) 46%, rgba(170,150,225,0) 72%), radial-gradient(105% 92% at 16% 82%, #3a2a72 0%, #211848 50%, rgba(11,10,26,0) 86%), radial-gradient(112% 96% at 84% 4%, #8b6ad0 0%, #4b3496 48%, #0b0a1a 100%)',
+  {dark: true, css: 'radial-gradient(56% 40% at 56% 33%, rgba(206,196,240,0.88) 0%, rgba(170,150,225,0.30) 46%, rgba(170,150,225,0) 72%), radial-gradient(105% 92% at 16% 82%, #3a2a72 0%, #211848 50%, rgba(11,10,26,0) 86%), radial-gradient(112% 96% at 84% 4%, #8b6ad0 0%, #4b3496 48%, #0b0a1a 100%)'},
   // golden hour with a warm cream orb
-  'radial-gradient(56% 40% at 60% 33%, rgba(255,232,195,0.9) 0%, rgba(245,200,150,0.30) 46%, rgba(245,200,150,0) 72%), radial-gradient(105% 92% at 84% 82%, #7a3a26 0%, #3a1e1a 50%, rgba(22,15,18,0) 86%), radial-gradient(112% 96% at 8% 4%, #e0a14a 0%, #9c4f2a 48%, #160f12 100%)',
+  {dark: true, css: 'radial-gradient(56% 40% at 60% 33%, rgba(255,232,195,0.9) 0%, rgba(245,200,150,0.30) 46%, rgba(245,200,150,0) 72%), radial-gradient(105% 92% at 84% 82%, #7a3a26 0%, #3a1e1a 50%, rgba(22,15,18,0) 86%), radial-gradient(112% 96% at 8% 4%, #e0a14a 0%, #9c4f2a 48%, #160f12 100%)'},
   // ocean with a pale aqua orb
-  'radial-gradient(56% 40% at 44% 33%, rgba(200,232,242,0.9) 0%, rgba(150,210,228,0.32) 46%, rgba(150,210,228,0) 72%), radial-gradient(105% 92% at 84% 82%, #0f4a5e 0%, #0a2c3c 50%, rgba(10,16,24,0) 86%), radial-gradient(112% 96% at 80% 4%, #3aa6b9 0%, #1c5f78 48%, #0a1018 100%)',
+  {dark: true, css: 'radial-gradient(56% 40% at 44% 33%, rgba(200,232,242,0.9) 0%, rgba(150,210,228,0.32) 46%, rgba(150,210,228,0) 72%), radial-gradient(105% 92% at 84% 82%, #0f4a5e 0%, #0a2c3c 50%, rgba(10,16,24,0) 86%), radial-gradient(112% 96% at 80% 4%, #3aa6b9 0%, #1c5f78 48%, #0a1018 100%)'},
   // emerald with a mint orb
-  'radial-gradient(56% 40% at 58% 33%, rgba(206,240,218,0.88) 0%, rgba(150,215,180,0.30) 46%, rgba(150,215,180,0) 72%), radial-gradient(105% 92% at 16% 82%, #1f5a44 0%, #123026 50%, rgba(10,19,15,0) 86%), radial-gradient(112% 96% at 84% 4%, #4fae7a 0%, #2b6f50 48%, #0a130f 100%)',
+  {dark: true, css: 'radial-gradient(56% 40% at 58% 33%, rgba(206,240,218,0.88) 0%, rgba(150,215,180,0.30) 46%, rgba(150,215,180,0) 72%), radial-gradient(105% 92% at 16% 82%, #1f5a44 0%, #123026 50%, rgba(10,19,15,0) 86%), radial-gradient(112% 96% at 84% 4%, #4fae7a 0%, #2b6f50 48%, #0a130f 100%)'},
   // magenta/plum with a pink orb
-  'radial-gradient(56% 40% at 56% 33%, rgba(248,210,235,0.88) 0%, rgba(225,150,200,0.30) 46%, rgba(225,150,200,0) 72%), radial-gradient(105% 92% at 84% 82%, #5a2350 0%, #2e1230 50%, rgba(18,10,20,0) 86%), radial-gradient(112% 96% at 14% 4%, #c64f9a 0%, #7e2c66 48%, #120a14 100%)',
+  {dark: true, css: 'radial-gradient(56% 40% at 56% 33%, rgba(248,210,235,0.88) 0%, rgba(225,150,200,0.30) 46%, rgba(225,150,200,0) 72%), radial-gradient(105% 92% at 84% 82%, #5a2350 0%, #2e1230 50%, rgba(18,10,20,0) 86%), radial-gradient(112% 96% at 14% 4%, #c64f9a 0%, #7e2c66 48%, #120a14 100%)'},
 ];
 
 // Italian, lowercase — exactly how an Italian iPhone shows the lock-screen date,
@@ -83,7 +86,8 @@ export type LockScreenData = {
   battery: number; // 1..100
   charging: boolean;
   signal: number; // cellular strength, 1..4 bright bars
-  wallpaper: string; // CSS background value
+  wallpaper: string; // CSS background value OR an image path (public/)
+  darkWallpaper: boolean; // area behind the notification is dark → light text
 };
 
 /**
@@ -111,7 +115,7 @@ export const lockScreenFor = (seed: string): LockScreenData => {
   const charging = r() < 0.45;
   const signal = 3 + Math.floor(r() * 2); // 3..4 bright bars (good reception)
 
-  const wallpaper = WALLPAPERS[Math.floor(r() * WALLPAPERS.length)];
+  const wp = WALLPAPERS[Math.floor(r() * WALLPAPERS.length)];
 
-  return {time, dateLabel, carrier, battery, charging, signal, wallpaper};
+  return {time, dateLabel, carrier, battery, charging, signal, wallpaper: wp.css, darkWallpaper: wp.dark};
 };

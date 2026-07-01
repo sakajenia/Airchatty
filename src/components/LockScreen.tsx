@@ -152,6 +152,15 @@ const wallpaperStyle = (w: string): React.CSSProperties =>
     : {background: w};
 
 export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSubtitle, guestPhoto, message}) => {
+  // Notification text adapts to the wallpaper: light/white on a dark background,
+  // dark on a light one — so it's always readable through the glass.
+  const dark = data.darkWallpaper;
+  const notif = {
+    title: dark ? '#ffffff' : '#1b1b1f',
+    body: dark ? 'rgba(255,255,255,0.92)' : 'rgba(28,28,34,0.82)',
+    meta: dark ? 'rgba(255,255,255,0.6)' : 'rgba(40,40,50,0.5)',
+    shadow: dark ? '0 1px 2px rgba(0,0,0,0.35)' : '0 1px 1px rgba(255,255,255,0.35)',
+  };
   return (
     <AbsoluteFill style={{...wallpaperStyle(data.wallpaper), fontFamily: SF, overflow: 'hidden'}}>
       {/* status bar */}
@@ -248,18 +257,18 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
             </svg>
           </div>
 
-          <div style={{flex: 1, minWidth: 0, color: '#1b1b1f'}}>
+          <div style={{flex: 1, minWidth: 0, color: notif.title}}>
             <div style={{display: 'flex', alignItems: 'baseline', justifyContent: 'space-between'}}>
-              <span style={{fontFamily: SF, fontSize: 38, fontWeight: 700, letterSpacing: -0.3, textShadow: '0 1px 1px rgba(255,255,255,0.35)'}}>{guestName}</span>
-              <span style={{fontFamily: SF, fontSize: 30, fontWeight: 500, color: 'rgba(40,40,50,0.5)', flexShrink: 0, marginLeft: 12}}>now</span>
+              <span style={{fontFamily: SF, fontSize: 38, fontWeight: 700, letterSpacing: -0.3, textShadow: notif.shadow}}>{guestName}</span>
+              <span style={{fontFamily: SF, fontSize: 30, fontWeight: 500, color: notif.meta, flexShrink: 0, marginLeft: 12}}>now</span>
             </div>
-            <div style={{fontFamily: SF, fontSize: 36, fontWeight: 700, letterSpacing: -0.3, marginTop: 2, textShadow: '0 1px 1px rgba(255,255,255,0.35)'}}>{guestSubtitle}</div>
+            <div style={{fontFamily: SF, fontSize: 36, fontWeight: 700, letterSpacing: -0.3, marginTop: 2, textShadow: notif.shadow}}>{guestSubtitle}</div>
             <div
               style={{
                 fontFamily: SF,
                 fontSize: 36,
                 fontWeight: 400,
-                color: 'rgba(28,28,34,0.82)',
+                color: notif.body,
                 marginTop: 4,
                 display: '-webkit-box',
                 WebkitLineClamp: 2,

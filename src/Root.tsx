@@ -26,7 +26,7 @@ const introChatProps: IntroChatProps = {
   ...defaultProps,
   intro: {
     disclaimer: pickDisclaimer('demo'),
-    lock: {...lockScreenFor('demo'), wallpaper: 'wallpapers/rome.jpg'},
+    lock: {...lockScreenFor('demo'), wallpaper: 'wallpapers/rome.jpg', darkWallpaper: false},
     // these are derived from the chat in calculateMetadata — just fallbacks here
     guestName: 'Giulia',
     guestSubtitle: 'Villa a Roma',
@@ -86,7 +86,7 @@ export const RootWithWireframe: React.FC = () => (
       height={HEIGHT}
       durationInFrames={90}
       defaultProps={{
-        data: {...lockScreenFor('demo-michelle'), wallpaper: 'wallpapers/rome.jpg'},
+        data: {...lockScreenFor('demo-michelle'), wallpaper: 'wallpapers/rome.jpg', darkWallpaper: false},
         guestName: 'Michelle',
         guestSubtitle: 'Co-host on 10 listings',
         guestPhoto: 'faces/face2.jpg',
