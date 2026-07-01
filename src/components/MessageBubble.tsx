@@ -115,12 +115,14 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
   const open = interpolate(local, [0, 3], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
   // Content: ghost (32%) → hold → fade to full. Sent messages skip the ghost
   // hold — your own message just fades in quickly.
-  const hold = Math.round((isYou ? 0 : GHOST_HOLD) * fps);
+  const hold = Math.round(GHOST_HOLD * fps);
   const fade = Math.round(GHOST_FADE * fps);
-  const contentOpacity = interpolate(local, [0, 1, hold + 1, hold + fade], [0, 0.32, 0.32, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
+  const contentOpacity = isYou
+    ? interpolate(local, [0, fade], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})
+    : interpolate(local, [0, 1, hold + 1, hold + fade], [0, 0.32, 0.32, 1], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+      });
   const measured = naturalH != null;
   const wrapperHeight = measured ? naturalH * open : undefined;
 
