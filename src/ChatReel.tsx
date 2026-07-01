@@ -11,7 +11,7 @@ import {
   useVideoConfig,
 } from 'remotion';
 import {ChatProps, personFor} from './schema';
-import {buildTimeline, composerStateAt, MessageSeg, outroFrames} from './timeline';
+import {buildTimeline, clockLabelAt, composerStateAt, MessageSeg, outroFrames} from './timeline';
 import {theme, useClientHeight, useNaturalHeight} from './util';
 import {ChatHeader, StatusBar, HeaderAvatar} from './components/ChatHeader';
 import {InputBar} from './components/InputBar';
@@ -33,10 +33,10 @@ export const ChatReel: React.FC<ChatProps & {status?: ChatStatus}> = (props) => 
   const {fps} = useVideoConfig();
   const {segments, durationInFrames: chatDur} = buildTimeline(items, {fps, speed, typingFor, keyboard});
 
-  // The status-bar clock = the conversation's time (the first message's label),
-  // so it agrees with the lock screen and the message timestamps.
-  const firstMsg = segments.find((s): s is MessageSeg => s.kind === 'message');
-  const statusTime = firstMsg?.timeLabel ?? '14:33';
+  // The status-bar clock is the live wall clock (same source as the message
+  // timestamps), so the top-right time and the bubble times always agree — and
+  // it matches the lock screen at the start.
+  const statusTime = clockLabelAt(frame, fps);
 
   // Meme outro: extra frames at the end where the chat freezes and the credit
   // (+ music) fades in. Anchored to the chat's OWN length (not the composition

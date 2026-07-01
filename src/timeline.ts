@@ -57,6 +57,24 @@ export type Timeline = {
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
+// The conversation happens LIVE: it only spans a minute or two of real time, so
+// the wall clock barely moves. We map a frame to a real time that starts at
+// BASE_MIN (a few seconds past the minute) and ticks with the video — so most
+// messages share the same minute and, in a longer chat, the last ones may be
+// +1. The message timestamps AND the status-bar clock both read from this, so
+// they always agree.
+const BASE_MIN = 14 * 60 + 33; // 14:33 — the time the first message is sent
+const START_OFFSET_SEC = 22; // seconds past the minute when the chat opens
+
+/** Wall-clock label ("HH:MM") for a given frame of the live conversation. */
+export const clockLabelAt = (frame: number, fps: number): string => {
+  const totalSec = START_OFFSET_SEC + Math.max(0, frame) / fps;
+  const min = BASE_MIN + Math.floor(totalSec / 60);
+  const h = Math.floor(min / 60) % 24;
+  const m = min % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
+
 /** Extra frames held at the end for a meme outro (freeze + credit + music). */
 export const outroFrames = (outro: string | undefined, fps: number): number =>
   outro ? Math.round(fps * 2.0) : 0;
@@ -214,13 +232,6 @@ export const buildTimeline = (
   let frame = sec(0.4);
   let messageCount = 0;
 
-  let clock = 14 * 60 + 32; // 14:32
-  const fmt = (mins: number) => {
-    const h = Math.floor(mins / 60) % 24;
-    const m = mins % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-  };
-
   items.forEach((item, index) => {
     if (item.type === 'separator') {
       segments.push({kind: 'separator', index, label: item.label, revealFrame: Math.round(frame)});
@@ -286,7 +297,6 @@ export const buildTimeline = (
     // afterMeme: no added delay — it reveals right at the cut, already on screen.
 
     const revealFrame = Math.round(frame);
-    clock += 1;
     segments.push({
       kind: 'message',
       index,
@@ -300,7 +310,7 @@ export const buildTimeline = (
       keyboardStartFrame,
       charDur,
       keystrokes,
-      timeLabel: item.time ?? fmt(clock),
+      timeLabel: item.time ?? clockLabelAt(revealFrame, fps),
       isFirstOfGroup,
       isLastOfGroup,
     });
