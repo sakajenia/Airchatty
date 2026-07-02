@@ -39,17 +39,14 @@ const CLOCK_W = 1080;
 /**
  * Build the Liquid Glass clock artwork from the REAL clock font via canvas.
  * The layer recipe follows the iOS GlassKit surface stack (GlassStyle.swift of
- * the liquid-glass-ios-system reference):
- *   1. drop shadow  — black ~22%, blurred, offset down (depth cue)
- *   2. frosted body — ultraThinMaterial ≈ backdrop blur + light tint (masked)
- *   3. lens highlight — radial white ~14% → clear from top-leading, soft-light
- *   4. edge stroke  — 1px white ~18–70%, brighter on top (light direction)
- * Returns data-URLs: the digit `mask`, the `shadow`, `highlight` and `edge`.
+ * the liquid-glass-ios-system reference), minus the drop shadow (per request):
+ *   1. frosted body — ultraThinMaterial ≈ backdrop blur + light tint (masked)
+ *   2. lens highlight — radial white ~14% → clear from top-leading, soft-light
+ *   3. edge stroke  — 1px white ~18–70%, brighter on top (light direction)
+ * Returns data-URLs: the digit `mask`, the `highlight` and `edge`.
  */
-const buildClockGlass = (
-  time: string,
-): {mask: string; shadow: string; highlight: string; edge: string} => {
-  if (typeof document === 'undefined') return {mask: '', shadow: '', highlight: '', edge: ''};
+const buildClockGlass = (time: string): {mask: string; highlight: string; edge: string} => {
+  if (typeof document === 'undefined') return {mask: '', highlight: '', edge: ''};
   const W = CLOCK_W;
   const H = CLOCK_H0;
   const font = `${CLOCK_WT} ${CLOCK_FS}px '${clockFont}', sans-serif`;
@@ -74,17 +71,7 @@ const buildClockGlass = (
   s.fillText(time, W / 2, H / 2);
   const mask = shapeC.toDataURL();
 
-  // (2) drop shadow: the silhouette, blurred and pushed down — GlassStyle's
-  // shadow(black 22%, radius 18, y 10) scaled to this canvas (~2.7×).
-  const [shC, sh] = make();
-  sh.filter = 'blur(26px)';
-  sh.globalAlpha = 0.32;
-  setup(sh);
-  sh.fillStyle = '#000';
-  sh.fillText(time, W / 2, H / 2 + 26);
-  const shadow = shC.toDataURL();
-
-  // (3) lens highlight: radial white → clear from the top-leading corner of
+  // (2) lens highlight: radial white → clear from the top-leading corner of
   // the text block, kept inside the glyphs (blended soft-light in CSS).
   const [hiC, hi] = make();
   setup(hi);
@@ -95,7 +82,7 @@ const buildClockGlass = (
   hi.fillText(time, W / 2, H / 2);
   const highlight = hiC.toDataURL();
 
-  // (4) edge stroke: thin rim, brighter where the light comes from (top),
+  // (3) edge stroke: thin rim, brighter where the light comes from (top),
   // fading toward the bottom — no uniform neon glow.
   const [edC, ed] = make();
   setup(ed);
@@ -108,12 +95,12 @@ const buildClockGlass = (
   ed.strokeText(time, W / 2, H / 2);
   const edge = edC.toDataURL();
 
-  return {mask, shadow, highlight, edge};
+  return {mask, highlight, edge};
 };
 
 /**
- * The lock clock: one coherent Liquid Glass digit string — depth shadow, a
- * refractive frosted body clipped to the digits, a top-leading lens highlight
+ * The lock clock: one coherent Liquid Glass digit string — a refractive
+ * frosted body clipped to the digits, a top-leading lens highlight
  * (soft-light) and a directional 1px rim. All from the same real font.
  */
 const GlassClock: React.FC<{time: string}> = ({time}) => {
@@ -130,9 +117,7 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
 
   return (
     <div style={{width: CLOCK_W, height: CLOCK_H0, position: 'relative'}}>
-      {/* 1 · depth shadow under the glass */}
-      {art.shadow ? <img src={art.shadow} width={CLOCK_W} height={CLOCK_H0} style={layer} alt="" /> : null}
-      {/* 2 · frosted refractive body (ultraThinMaterial + displacement), masked
+      {/* 1 · frosted refractive body (ultraThinMaterial + displacement), masked
              to the digits — a LIGHT tint so the wallpaper shows through */}
       <div
         style={{
@@ -143,11 +128,11 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
           ...maskProps,
         }}
       />
-      {/* 3 · lens highlight, soft-light so it reads as light on glass */}
+      {/* 2 · lens highlight, soft-light so it reads as light on glass */}
       {art.highlight ? (
         <img src={art.highlight} width={CLOCK_W} height={CLOCK_H0} style={{...layer, mixBlendMode: 'soft-light', opacity: 0.95}} alt="" />
       ) : null}
-      {/* 4 · directional 1px rim */}
+      {/* 3 · directional 1px rim */}
       {art.edge ? <img src={art.edge} width={CLOCK_W} height={CLOCK_H0} style={layer} alt="" /> : null}
     </div>
   );
