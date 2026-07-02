@@ -1,5 +1,5 @@
 import React from 'react';
-import {AbsoluteFill, staticFile} from 'remotion';
+import {AbsoluteFill, continueRender, delayRender, staticFile} from 'remotion';
 import {theme} from '../util';
 import {LockScreenData} from '../lockscreen';
 import {clockFont} from '../clockfont';
@@ -102,9 +102,32 @@ const buildClockGlass = (time: string): {mask: string; highlight: string; edge: 
  * The lock clock: one coherent Liquid Glass digit string — a refractive
  * frosted body clipped to the digits, a top-leading lens highlight
  * (soft-light) and a directional 1px rim. All from the same real font.
+ *
+ * The canvas art is generated only AFTER the embedded SF Compressed face has
+ * actually loaded (delayRender-gated): canvas fillText does NOT block on
+ * @font-face, so drawing early silently falls back to the default font —
+ * that's what produced the occasional wide/wrong digits.
  */
 const GlassClock: React.FC<{time: string}> = ({time}) => {
-  const art = React.useMemo(() => buildClockGlass(time), [time]);
+  const [fontReady, setFontReady] = React.useState(false);
+  React.useEffect(() => {
+    const handle = delayRender('SFClock (canvas clock font)');
+    const done = () => {
+      setFontReady(true);
+      continueRender(handle);
+    };
+    const spec = `${CLOCK_WT} ${CLOCK_FS}px '${clockFont}'`;
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      document.fonts.load(spec, '0123456789:').then(done).catch(done);
+    } else {
+      done();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const art = React.useMemo(
+    () => (fontReady ? buildClockGlass(time) : {mask: '', highlight: '', edge: ''}),
+    [time, fontReady],
+  );
   const maskProps: React.CSSProperties = {
     WebkitMaskImage: `url(${art.mask})`,
     maskImage: `url(${art.mask})`,
@@ -122,8 +145,8 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
       <div
         style={{
           ...layer,
-          backdropFilter: 'blur(3px) url(#lg-filter) blur(11px) saturate(1.65) brightness(1.08)',
-          WebkitBackdropFilter: 'blur(14px) saturate(1.65) brightness(1.08)',
+          backdropFilter: 'blur(2px) url(#lg-filter) blur(6px) saturate(1.65) brightness(1.08)',
+          WebkitBackdropFilter: 'blur(8px) saturate(1.65) brightness(1.08)',
           background: 'rgba(255,255,255,0.10)',
           ...maskProps,
         }}

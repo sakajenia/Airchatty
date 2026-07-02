@@ -11,6 +11,7 @@ import {INTRO_DISCLAIMERS} from './introDisclaimers';
 import {IntroChat, IntroChatProps, prepareIntroChat, introChatDuration} from './Intro';
 import {pickDisclaimer} from './introDisclaimers';
 import {KeyboardPreview} from './components/KeyboardPreview';
+import {FontDebug} from './components/FontDebug';
 
 const FPS = 30;
 const WIDTH = 1080;
@@ -102,6 +103,7 @@ export const RootWithWireframe: React.FC = () => (
       durationInFrames={1}
       defaultProps={{mode: 'letters' as const, pressedKey: 'g'}}
     />
+    <Composition id="FontDebug" component={FontDebug} fps={FPS} width={1080} height={1920} durationInFrames={1} />
     <Composition
       id="IntroChat"
       component={IntroChat}
