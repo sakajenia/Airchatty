@@ -19,9 +19,11 @@ export const theme = {
   white: '#ffffff',
   online: '#34c759',
 
-  // Chat-specific
-  incomingBubble: '#f7f7f8', // very light grey — sampled from the real app recording
-  incomingText: '#262626',
+  // Chat-specific — sampled pixel-by-pixel from the user's real app recording
+  // (bubble interior mode rgb(244) against page white rgb(254) → true #f5f5f5;
+  // darkest text glyphs 28–34 → Airbnb ink #222222).
+  incomingBubble: '#f5f5f5',
+  incomingText: '#222222',
   outgoingBubble: '#3a3a3a', // dark charcoal bubble for "you" (NOT pink)
   outgoingText: '#ffffff',
 

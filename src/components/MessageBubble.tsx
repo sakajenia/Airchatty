@@ -24,13 +24,15 @@ export type ChatBubbleProps = {
 
 const AVATAR = 76; // measured from the reference recording (~90px @1320)
 
-// Entrance timing measured frame-by-frame from the real Airbnb recording:
-// the bubble appears instantly IN PLACE with its content "ghosted" (~32%
-// opacity — light-grey text), holds ~0.2s, then the content fades to full and
-// the avatar jumps onto it. No spring, no slide, no scale.
-export const GHOST_HOLD = 0.2; // seconds at reduced opacity
-export const GHOST_FADE = 0.13; // seconds fading to full
-export const matureFrames = (fps: number) => Math.round((GHOST_HOLD + GHOST_FADE) * fps);
+// Entrance timing re-measured frame-by-frame from the user's real Airbnb
+// recording (38 extracted frames): the bubble container appears instantly at
+// FULL SIZE with its final background colour; the text starts INVISIBLE one
+// frame later and fades linearly to full ink over ~4 frames (measured 24% →
+// 48% → 74% → 100%, no hold); the avatar leaves the previous message and
+// lands on this one right as the fade completes. No spring, no slide, no scale.
+export const TEXT_DELAY = 0.03; // text starts ~1 frame after the bubble
+export const TEXT_FADE = 0.15; // linear fade to full ink
+export const matureFrames = (fps: number) => Math.round((TEXT_DELAY + TEXT_FADE) * fps);
 
 const ReactionBadge: React.FC<{emoji: string; isYou: boolean; revealFrame: number}> = ({
   emoji,
@@ -110,19 +112,17 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
   const [contentRef, naturalH] = useNaturalHeight();
 
   const local = frame - revealFrame;
-  // The list makes room almost instantly (the ghost is already in its final
-  // position on the very next recording frame).
-  const open = interpolate(local, [0, 3], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
-  // Content: ghost (32%) → hold → fade to full. Sent messages skip the ghost
-  // hold — your own message just fades in quickly.
-  const hold = Math.round(GHOST_HOLD * fps);
-  const fade = Math.round(GHOST_FADE * fps);
+  // The list makes room essentially instantly — the reference shows the bubble
+  // at its full size on the very frame it appears.
+  const open = interpolate(local, [0, 2], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  // Content: invisible → linear fade to full ink, starting one frame after the
+  // container (measured from the recording). Your own sent messages fade the
+  // same way, just without the delay.
+  const dly = Math.max(1, Math.round(TEXT_DELAY * fps));
+  const fade = Math.max(1, Math.round(TEXT_FADE * fps));
   const contentOpacity = isYou
     ? interpolate(local, [0, fade], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})
-    : interpolate(local, [0, 1, hold + 1, hold + fade], [0, 0.32, 0.32, 1], {
-        extrapolateLeft: 'clamp',
-        extrapolateRight: 'clamp',
-      });
+    : interpolate(local, [dly, dly + fade], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
   const measured = naturalH != null;
   const wrapperHeight = measured ? naturalH * open : undefined;
 
