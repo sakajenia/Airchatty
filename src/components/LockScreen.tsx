@@ -36,17 +36,25 @@ const CLOCK_WT = 400; // the embedded instance is already Medium
 const CLOCK_H0 = 540; // box height (contains the tall glyphs)
 const CLOCK_W = 1080;
 
+type ClockArt = {mask: string; highlight: string; edge: string; innerShadow: string};
+
 /**
  * Build the Liquid Glass clock artwork from the REAL clock font via canvas.
  * The layer recipe follows the iOS GlassKit surface stack (GlassStyle.swift of
- * the liquid-glass-ios-system reference), minus the drop shadow (per request):
- *   1. frosted body — ultraThinMaterial ≈ backdrop blur + light tint (masked)
- *   2. lens highlight — radial white ~14% → clear from top-leading, soft-light
- *   3. edge stroke  — 1px white ~18–70%, brighter on top (light direction)
- * Returns data-URLs: the digit `mask`, the `highlight` and `edge`.
+ * the liquid-glass-ios-system reference), minus the drop shadow (per request),
+ * plus 3 legibility upgrades so the clock reads on ANY wallpaper (light, busy):
+ *   1. frosted body — ultraThinMaterial ≈ backdrop blur + tint (masked); the
+ *      tint/brightness ADAPT to the wallpaper (see GlassClock) so digits stay
+ *      darker-than-background on light shots and lighter on dark ones.
+ *   2. inner shadow — a soft dark rim INSIDE the glyph edges, giving the glass a
+ *      real thickness/contour that survives on light or complicated backgrounds.
+ *   3. lens highlight — radial white → clear from top-leading, soft-light.
+ *   4. bevel edge   — a BI-TONAL rim: bright top-leading (light source) fading
+ *      to dark bottom-trailing, so the outline is visible whatever is behind it.
+ * Returns data-URLs for each layer.
  */
-const buildClockGlass = (time: string): {mask: string; highlight: string; edge: string} => {
-  if (typeof document === 'undefined') return {mask: '', highlight: '', edge: ''};
+const buildClockGlass = (time: string, dark: boolean): ClockArt => {
+  if (typeof document === 'undefined') return {mask: '', highlight: '', edge: '', innerShadow: ''};
   const W = CLOCK_W;
   const H = CLOCK_H0;
   const font = `${CLOCK_WT} ${CLOCK_FS}px '${clockFont}', sans-serif`;
@@ -54,7 +62,7 @@ const buildClockGlass = (time: string): {mask: string; highlight: string; edge: 
     ctx.font = font;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    // @ts-expect-error letterSpacing is supported in Chromium canvas
+    // @ts-ignore letterSpacing is supported in Chromium canvas
     ctx.letterSpacing = `${CLOCK_LS}px`;
   };
   const make = () => {
@@ -71,7 +79,26 @@ const buildClockGlass = (time: string): {mask: string; highlight: string; edge: 
   s.fillText(time, W / 2, H / 2);
   const mask = shapeC.toDataURL();
 
-  // (2) lens highlight: radial white → clear from the top-leading corner of
+  // (2) inner shadow: a soft dark contour just inside the glyph edges. Built by
+  // clipping a blurred+offset INVERSE (dark everywhere except the digits) to the
+  // glyph shape — the dark surround bleeds inward only along the borders. This
+  // gives glass thickness and, crucially, a dark outline that reads on light and
+  // busy backgrounds where a transparent glass would otherwise vanish.
+  const [invC, inv] = make();
+  setup(inv);
+  inv.fillStyle = dark ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.7)';
+  inv.fillRect(0, 0, W, H);
+  inv.globalCompositeOperation = 'destination-out';
+  inv.fillText(time, W / 2, H / 2);
+  const [isC, is] = make();
+  setup(is);
+  is.fillText(time, W / 2, H / 2); // glyph alpha
+  is.globalCompositeOperation = 'source-in'; // keep only inside the digits
+  is.filter = 'blur(9px)';
+  is.drawImage(invC, 0, 5); // blurred inverse, nudged down → inner edge shadow
+  const innerShadow = isC.toDataURL();
+
+  // (3) lens highlight: radial white → clear from the top-leading corner of
   // the text block, kept inside the glyphs (blended soft-light in CSS).
   const [hiC, hi] = make();
   setup(hi);
@@ -82,20 +109,24 @@ const buildClockGlass = (time: string): {mask: string; highlight: string; edge: 
   hi.fillText(time, W / 2, H / 2);
   const highlight = hiC.toDataURL();
 
-  // (3) edge stroke: thin rim, brighter where the light comes from (top),
-  // fading toward the bottom — no uniform neon glow.
+  // (4) bevel edge: a BI-TONAL rim following the light direction — bright at the
+  // top-leading corner (the specular lip) fading to a dark rim at the
+  // bottom-trailing corner (the shaded lip). The dark half keeps the outline
+  // legible on light wallpapers; the bright half sells the glass on dark ones.
   const [edC, ed] = make();
   setup(ed);
-  const rim = ed.createLinearGradient(0, H * 0.12, 0, H * 0.88);
-  rim.addColorStop(0, 'rgba(255,255,255,0.85)');
-  rim.addColorStop(0.5, 'rgba(255,255,255,0.38)');
-  rim.addColorStop(1, 'rgba(255,255,255,0.55)');
-  ed.lineWidth = 2.6;
+  const rim = ed.createLinearGradient(W * 0.12, H * 0.1, W * 0.88, H * 0.92);
+  rim.addColorStop(0, 'rgba(255,255,255,0.95)');
+  rim.addColorStop(0.42, 'rgba(255,255,255,0.32)');
+  rim.addColorStop(0.62, dark ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.34)');
+  rim.addColorStop(1, dark ? 'rgba(0,0,0,0.42)' : 'rgba(0,0,0,0.62)');
+  ed.lineWidth = 3;
+  ed.lineJoin = 'round';
   ed.strokeStyle = rim;
   ed.strokeText(time, W / 2, H / 2);
   const edge = edC.toDataURL();
 
-  return {mask, highlight, edge};
+  return {mask, highlight, edge, innerShadow};
 };
 
 /**
@@ -108,7 +139,7 @@ const buildClockGlass = (time: string): {mask: string; highlight: string; edge: 
  * @font-face, so drawing early silently falls back to the default font —
  * that's what produced the occasional wide/wrong digits.
  */
-const GlassClock: React.FC<{time: string}> = ({time}) => {
+const GlassClock: React.FC<{time: string; dark: boolean}> = ({time, dark}) => {
   const [fontReady, setFontReady] = React.useState(false);
   React.useEffect(() => {
     const handle = delayRender('SFClock (canvas clock font)');
@@ -125,8 +156,8 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const art = React.useMemo(
-    () => (fontReady ? buildClockGlass(time) : {mask: '', highlight: '', edge: ''}),
-    [time, fontReady],
+    () => (fontReady ? buildClockGlass(time, dark) : {mask: '', highlight: '', edge: '', innerShadow: ''}),
+    [time, dark, fontReady],
   );
   const maskProps: React.CSSProperties = {
     WebkitMaskImage: `url(${art.mask})`,
@@ -138,24 +169,37 @@ const GlassClock: React.FC<{time: string}> = ({time}) => {
   };
   const layer: React.CSSProperties = {position: 'absolute', inset: 0};
 
+  // Adaptive frosted body: on DARK wallpapers keep a light, brightened glass so
+  // the digits glow lighter than the background. On LIGHT/busy wallpapers dim the
+  // wallpaper behind the glass (brightness < 1) and add a neutral-dark tint, so
+  // the digits read DARKER than the background instead of disappearing into it.
+  const body: React.CSSProperties = dark
+    ? {
+        backdropFilter: 'blur(2px) url(#lg-filter) blur(6px) saturate(1.65) brightness(1.08)',
+        WebkitBackdropFilter: 'blur(8px) saturate(1.65) brightness(1.08)',
+        background: 'rgba(255,255,255,0.10)',
+      }
+    : {
+        backdropFilter: 'blur(2px) url(#lg-filter) blur(7px) saturate(1.25) brightness(0.78)',
+        WebkitBackdropFilter: 'blur(9px) saturate(1.25) brightness(0.78)',
+        background: 'rgba(20,22,28,0.16)',
+      };
+
   return (
     <div style={{width: CLOCK_W, height: CLOCK_H0, position: 'relative'}}>
       {/* 1 · frosted refractive body (ultraThinMaterial + displacement), masked
-             to the digits — a LIGHT tint so the wallpaper shows through */}
-      <div
-        style={{
-          ...layer,
-          backdropFilter: 'blur(2px) url(#lg-filter) blur(6px) saturate(1.65) brightness(1.08)',
-          WebkitBackdropFilter: 'blur(8px) saturate(1.65) brightness(1.08)',
-          background: 'rgba(255,255,255,0.10)',
-          ...maskProps,
-        }}
-      />
-      {/* 2 · lens highlight, soft-light so it reads as light on glass */}
+             to the digits — tint/brightness adapt to the wallpaper */}
+      <div style={{...layer, ...body, ...maskProps}} />
+      {/* 2 · inner shadow — dark contour inside the glyph edges (glass thickness;
+             keeps the outline legible on light / complicated backgrounds) */}
+      {art.innerShadow ? (
+        <img src={art.innerShadow} width={CLOCK_W} height={CLOCK_H0} style={{...layer, opacity: 0.9}} alt="" />
+      ) : null}
+      {/* 3 · lens highlight, soft-light so it reads as light on glass */}
       {art.highlight ? (
         <img src={art.highlight} width={CLOCK_W} height={CLOCK_H0} style={{...layer, mixBlendMode: 'soft-light', opacity: 0.95}} alt="" />
       ) : null}
-      {/* 3 · directional 1px rim */}
+      {/* 4 · bi-tonal bevel rim */}
       {art.edge ? <img src={art.edge} width={CLOCK_W} height={CLOCK_H0} style={layer} alt="" /> : null}
     </div>
   );
@@ -211,14 +255,14 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
       {/* date + glass clock + notification, stacked from the top */}
       <div style={{position: 'absolute', top: 196, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
         <span style={{fontFamily: SF, fontSize: 40, fontWeight: 600, color: 'rgba(255,255,255,0.95)', letterSpacing: 0.3, marginBottom: 18}}>{TOP_LABEL}</span>
-        <GlassClock time={data.time} />
+        <GlassClock time={data.time} dark={dark} />
 
         {/* the liquid-glass displacement filter for the notification */}
         <svg width="0" height="0" style={{position: 'absolute'}} aria-hidden>
           <filter id="lg-filter" x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
             <feTurbulence type="fractalNoise" baseFrequency="0.006 0.011" numOctaves="2" seed="7" result="noise" />
             <feGaussianBlur in="noise" stdDeviation="1.1" result="sm" />
-            <feDisplacementMap in="SourceGraphic" in2="sm" scale="16" xChannelSelector="R" yChannelSelector="G" />
+            <feDisplacementMap in="SourceGraphic" in2="sm" scale="24" xChannelSelector="R" yChannelSelector="G" />
           </filter>
         </svg>
         {/* Airbnb push — Liquid Glass banner (provided spec), below the clock */}

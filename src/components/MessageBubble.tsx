@@ -1,5 +1,5 @@
 import React from 'react';
-import {interpolate, useCurrentFrame, useVideoConfig} from 'remotion';
+import {interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
 import {theme, useNaturalHeight} from '../util';
 import {Avatar} from './Avatar';
 import {EmojiText} from './EmojiText';
