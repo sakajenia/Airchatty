@@ -57,10 +57,11 @@ function imageIsDark(rel: string): boolean {
 }
 
 /**
- * Pick a lock-screen wallpaper for a video: any image in public/wallpapers/ plus
- * the built-in gradients, chosen deterministically from the seed so each video
- * differs but always renders the same. Returns the value + whether it's dark
- * (drives the notification text colour).
+ * Pick a lock-screen wallpaper for a video, deterministically from the seed
+ * (each chat gets its own, and re-rendering the same chat gives the same one).
+ * When the user's wallpaper library (public/wallpapers/) has images, ONLY
+ * those are used; the built-in gradients are just the fallback for an empty
+ * folder. Returns the value + whether it's dark (drives the notification text).
  */
 function pickWallpaper(seed: string): {wallpaper: string; dark: boolean} {
   let imgs: string[] = [];
@@ -68,14 +69,14 @@ function pickWallpaper(seed: string): {wallpaper: string; dark: boolean} {
     imgs = fs
       .readdirSync(path.join(ROOT, 'public', 'wallpapers'))
       .filter((f) => /\.(jpe?g|png|webp)$/i.test(f))
+      .sort()
       .map((f) => `wallpapers/${f}`);
   } catch {
     /* none yet */
   }
-  const pool = [
-    ...imgs.map((f) => ({wallpaper: f, dark: imageIsDark(f)})),
-    ...WALLPAPERS.map((w) => ({wallpaper: w.css, dark: w.dark})),
-  ];
+  const pool = imgs.length
+    ? imgs.map((f) => ({wallpaper: f, dark: imageIsDark(f)}))
+    : WALLPAPERS.map((w) => ({wallpaper: w.css, dark: w.dark}));
   let h = 2166136261 >>> 0;
   for (let i = 0; i < seed.length; i++) {
     h ^= seed.charCodeAt(i);
