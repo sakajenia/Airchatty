@@ -88,6 +88,10 @@ export type LockScreenData = {
   signal: number; // cellular strength, 1..4 bright bars
   wallpaper: string; // CSS background value OR an image path (public/)
   darkWallpaper: boolean; // area behind the notification is dark → light text
+  darkClock?: boolean; // area behind the CLOCK (top) is dark → light glass clock.
+  //                      Sampled separately: the top of a wallpaper is often much
+  //                      brighter/darker than the notification band. Falls back to
+  //                      darkWallpaper when not provided.
 };
 
 /**
@@ -117,5 +121,5 @@ export const lockScreenFor = (seed: string): LockScreenData => {
 
   const wp = WALLPAPERS[Math.floor(r() * WALLPAPERS.length)];
 
-  return {time, dateLabel, carrier, battery, charging, signal, wallpaper: wp.css, darkWallpaper: wp.dark};
+  return {time, dateLabel, carrier, battery, charging, signal, wallpaper: wp.css, darkWallpaper: wp.dark, darkClock: wp.dark};
 };

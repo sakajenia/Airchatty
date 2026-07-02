@@ -36,24 +36,35 @@ import {pickDisclaimer} from '../src/introDisclaimers';
 /** Seconds into notify-intro.wav where the cue cuts from black to the lock screen. */
 const INTRO_MARKER_SEC = 1.44;
 
-/** Whether an image wallpaper is dark BEHIND the notification (mid-screen band),
- *  so the lock-screen notification can switch to light text. Sampled once. */
-const imgDarkCache: Record<string, boolean> = {};
-function imageIsDark(rel: string): boolean {
-  if (rel in imgDarkCache) return imgDarkCache[rel];
-  let dark = false;
+/** Mean luminance (0..255) of a horizontal band of an image wallpaper, cached.
+ *  y0/y1 are fractions of the image height. Returns 255 (assume light) on error. */
+const brightCache: Record<string, number> = {};
+function bandBrightness(rel: string, y0: number, y1: number): number {
+  const key = `${rel}:${y0}:${y1}`;
+  if (key in brightCache) return brightCache[key];
+  let val = 255;
   try {
     const abs = path.join(ROOT, 'public', rel);
     const py =
       `from PIL import Image;im=Image.open(${JSON.stringify(abs)}).convert('L');w,h=im.size;` +
-      `c=im.crop((int(w*0.06),int(h*0.42),int(w*0.94),int(h*0.55)));d=list(c.getdata());print(sum(d)/len(d))`;
-    const out = execSync(`python3 -c ${JSON.stringify(py)}`, {encoding: 'utf8'}).trim();
-    dark = parseFloat(out) < 130;
+      `c=im.crop((int(w*0.06),int(h*${y0}),int(w*0.94),int(h*${y1})));d=list(c.getdata());print(sum(d)/len(d))`;
+    val = parseFloat(execSync(`python3 -c ${JSON.stringify(py)}`, {encoding: 'utf8'}).trim());
   } catch {
-    dark = false; // if we can't sample, assume a light image → dark text
+    val = 255; // if we can't sample, assume a light image → dark text/glass
   }
-  imgDarkCache[rel] = dark;
-  return dark;
+  brightCache[key] = val;
+  return val;
+}
+
+/** Dark BEHIND the notification (mid-screen band) → notification uses light text. */
+function notifIsDark(rel: string): boolean {
+  return bandBrightness(rel, 0.42, 0.55) < 130;
+}
+/** Dark BEHIND the clock (top band, where the big digits sit) → light glass clock.
+ *  Sampled separately from the notification: a wallpaper's sky can be bright while
+ *  its mid-screen is dark (or vice-versa), and the clock must adapt to ITS region. */
+function clockIsDark(rel: string): boolean {
+  return bandBrightness(rel, 0.13, 0.36) < 138;
 }
 
 /**
@@ -63,7 +74,7 @@ function imageIsDark(rel: string): boolean {
  * those are used; the built-in gradients are just the fallback for an empty
  * folder. Returns the value + whether it's dark (drives the notification text).
  */
-function pickWallpaper(seed: string): {wallpaper: string; dark: boolean} {
+function pickWallpaper(seed: string): {wallpaper: string; dark: boolean; clockDark: boolean} {
   let imgs: string[] = [];
   try {
     imgs = fs
@@ -75,14 +86,14 @@ function pickWallpaper(seed: string): {wallpaper: string; dark: boolean} {
     /* none yet */
   }
   const pool = imgs.length
-    ? imgs.map((f) => ({wallpaper: f, dark: imageIsDark(f)}))
-    : WALLPAPERS.map((w) => ({wallpaper: w.css, dark: w.dark}));
+    ? imgs.map((f) => ({wallpaper: f, dark: notifIsDark(f), clockDark: clockIsDark(f)}))
+    : WALLPAPERS.map((w) => ({wallpaper: w.css, dark: w.dark, clockDark: w.dark}));
   let h = 2166136261 >>> 0;
   for (let i = 0; i < seed.length; i++) {
     h ^= seed.charCodeAt(i);
     h = Math.imul(h, 16777619) >>> 0;
   }
-  return pool[h % pool.length] || {wallpaper: WALLPAPERS[0].css, dark: WALLPAPERS[0].dark};
+  return pool[h % pool.length] || {wallpaper: WALLPAPERS[0].css, dark: WALLPAPERS[0].dark, clockDark: WALLPAPERS[0].dark};
 }
 
 /** Download the Twemoji SVG for every emoji used so they render in full colour. */
@@ -364,7 +375,7 @@ async function main() {
       ...props,
       intro: {
         disclaimer: pickDisclaimer(outName),
-        lock: {...lockScreenFor(outName), wallpaper: wp.wallpaper, darkWallpaper: wp.dark},
+        lock: {...lockScreenFor(outName), wallpaper: wp.wallpaper, darkWallpaper: wp.dark, darkClock: wp.clockDark},
         guestName: '',
         guestSubtitle: '',
         guestPhoto: '',

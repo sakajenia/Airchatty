@@ -225,6 +225,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
   // Notification text adapts to the wallpaper: light/white on a dark background,
   // dark on a light one — so it's always readable through the glass.
   const dark = data.darkWallpaper;
+  // The clock adapts to ITS OWN region (top of the wallpaper), which is often
+  // brighter/darker than the notification band — falls back to darkWallpaper.
+  const clockDark = data.darkClock ?? data.darkWallpaper;
   const notif = {
     title: dark ? '#ffffff' : '#1b1b1f',
     body: dark ? 'rgba(255,255,255,0.92)' : 'rgba(28,28,34,0.82)',
@@ -255,7 +258,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
       {/* date + glass clock + notification, stacked from the top */}
       <div style={{position: 'absolute', top: 196, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
         <span style={{fontFamily: SF, fontSize: 40, fontWeight: 600, color: 'rgba(255,255,255,0.95)', letterSpacing: 0.3, marginBottom: 18}}>{TOP_LABEL}</span>
-        <GlassClock time={data.time} dark={dark} />
+        <GlassClock time={data.time} dark={clockDark} />
 
         {/* the liquid-glass displacement filter for the notification */}
         <svg width="0" height="0" style={{position: 'absolute'}} aria-hidden>
