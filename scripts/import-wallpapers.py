@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Import lock-screen wallpapers into public/wallpapers/.
 
-Takes a folder (or zip) of images in any format/size, cover-crops each to the
-video canvas (1080x1920), re-encodes as an optimized JPEG and names them
-uniformly (roma-01.jpg, roma-02.jpg, ...). The batch renderer then picks one
-per chat automatically (deterministic per chat name).
+Takes a folder (or zip) of images (already 9:16). It only RESIZES DOWN when an
+image is bigger than the video canvas width and re-encodes as an optimized JPEG
+— it never crops. Files are named uniformly (roma-01.jpg, roma-02.jpg, ...) so
+the batch renderer picks one per chat automatically (deterministic per chat).
 
   python3 scripts/import-wallpapers.py <folder-or-zip> [prefix]
 """
@@ -15,7 +15,7 @@ from pathlib import Path
 
 from PIL import Image
 
-W, H = 1080, 1920
+MAX_W = 1080  # video canvas width; downscale only if wider, preserving aspect
 
 def iter_images(src: Path):
     if src.suffix.lower() == '.zip':
@@ -28,13 +28,16 @@ def iter_images(src: Path):
             if p.suffix.lower() in ('.jpg', '.jpeg', '.png', '.webp'):
                 yield p.name, Image.open(p)
 
-def cover(im: Image.Image) -> Image.Image:
+def resize_only(im: Image.Image) -> Image.Image:
+    """Downscale to MAX_W wide (keep aspect); never upscale, never crop."""
     im = im.convert('RGB')
-    scale = max(W / im.width, H / im.height)
-    im = im.resize((round(im.width * scale), round(im.height * scale)), Image.LANCZOS)
-    x = (im.width - W) // 2
-    y = (im.height - H) // 2
-    return im.crop((x, y, x + W, y + H))
+    if im.width > MAX_W:
+        h = round(im.height * MAX_W / im.width)
+        im = im.resize((MAX_W, h), Image.LANCZOS)
+    return im
+
+def process_one(im: Image.Image, dest: Path):
+    resize_only(im).save(dest, 'JPEG', quality=86, optimize=True)
 
 def main():
     if len(sys.argv) < 2:
@@ -48,7 +51,7 @@ def main():
     for name, im in iter_images(src):
         n += 1
         dest = out / f'{prefix}-{n:02d}.jpg'
-        cover(im).save(dest, 'JPEG', quality=82, optimize=True)
+        process_one(im, dest)
         print(f'  {name} -> {dest.name}')
     print(f'\n✓ {n} wallpaper importati in public/wallpapers/')
 
