@@ -22,7 +22,7 @@ export type ChatBubbleProps = {
   readReceipt?: string;
 };
 
-const AVATAR = 76; // measured from the reference recording (~90px @1320)
+const AVATAR = 84; // measured from the reference recording (30px @384 → 84 @1080)
 
 // Entrance timing re-measured frame-by-frame from the user's real Airbnb
 // recording (38 extracted frames): the bubble container appears instantly at
@@ -142,13 +142,16 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
     <div
       style={{
         maxWidth: 740,
-        padding: '20px 30px',
+        // Every metric below is measured from the reference recording at 384px
+        // and scaled ×2.8125 to the 1080 canvas: single-line bubble ≈ 100px tall
+        // (50px line + 25px vertical padding), text cap-height ≈ 28px → 36px font.
+        padding: '25px 34px',
         // uniform squircle-round corners, like the real app (no flattened corner)
         borderRadius: 50,
         background: isYou ? theme.outgoingBubble : theme.incomingBubble,
         color: isYou ? theme.outgoingText : theme.incomingText,
-        fontSize: 42,
-        lineHeight: 1.45,
+        fontSize: 36,
+        lineHeight: 1.4,
         letterSpacing: -0.2,
         fontWeight: 500,
         fontFamily: theme.font,
@@ -169,7 +172,8 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
             {timeLabel}
           </div>
         ) : (
-          <div style={{fontSize: 24, color: theme.ash, margin: '0 0 8px 12px', fontWeight: 500}}>
+          // aligned with the TEXT inside the bubble (not its edge), per the reference
+          <div style={{fontSize: 24, color: theme.ash, margin: '0 0 8px 34px', fontWeight: 500}}>
             <span style={{fontWeight: 600, color: theme.ink}}>{senderName}</span>
             {` · ${senderRole}  ${timeLabel}`}
           </div>
@@ -192,14 +196,15 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
       <div
         ref={contentRef}
         style={{
-          paddingTop: isFirstOfGroup ? 30 : 18,
+          // grouped bubbles sit ~16px apart in the reference (6px @384)
+          paddingTop: isFirstOfGroup ? 30 : 16,
           opacity: measured ? 1 : 0,
         }}
       >
         {isYou ? (
           column
         ) : (
-          <div style={{display: 'flex', alignItems: 'flex-end', gap: 25}}>
+          <div style={{display: 'flex', alignItems: 'flex-end', gap: 8}}>
             <div style={{width: AVATAR, flexShrink: 0}}>
               {showAvatar && <Avatar name={senderName} src={avatarSrc} size={AVATAR} />}
             </div>
