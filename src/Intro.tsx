@@ -41,7 +41,7 @@ export const introTiming = (fps: number, markerSec: number) => {
   const audioStart = Math.max(0, Math.round((BLACK_SEC - markerSec) * fps));
   const marker = audioStart + Math.round(markerSec * fps); // = the hard cut (~2s)
   const lockHold = Math.round(fps * 2.0); // dwell on the lock screen + notification
-  const unlock = Math.round(fps * 0.62); // the unlock swipe-up
+  const unlock = Math.round(fps * 0.72); // the unlock swipe-up + chat zoom-out
   const unlockStart = marker + lockHold;
   const chatStart = unlockStart; // chat is revealed by the unlock
   return {audioStart, marker, lockHold, unlock, unlockStart, chatStart};
@@ -53,16 +53,22 @@ export const IntroChat: React.FC<IntroChatProps> = (props) => {
   const frame = useCurrentFrame();
   const {audioStart, marker, unlock, unlockStart, chatStart} = introTiming(fps, intro.markerSec);
 
-  // unlock: lock screen slides up + fades; the chat zooms from 1.06 → 1.0 + fades in
+  // Unlock = exactly the iPhone gesture: the lock-screen LAYER slides up and off
+  // the top (with a light fade), and UNDERNEATH the chat is revealed ZOOMING OUT
+  // — it starts noticeably enlarged (scale 1.16) and settles to 1.0. Everything
+  // decelerates together (ease-out) so it reads as one springy iOS motion.
   const up = interpolate(frame, [unlockStart, unlockStart + unlock], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
-    easing: Easing.inOut(Easing.cubic),
+    easing: Easing.out(Easing.cubic),
   });
-  const lockY = -up * height * 0.55;
-  const lockOpacity = 1 - up;
-  const chatScale = interpolate(up, [0, 1], [1.06, 1]);
-  const chatOpacity = interpolate(frame, [unlockStart, unlockStart + Math.round(unlock * 0.7)], [0, 1], {
+  const lockY = -up * height * 0.72; // slides fully up and off the top
+  const lockOpacity = 1 - Math.min(1, up * 1.35); // fades a touch faster than it slides
+  const chatScale = interpolate(up, [0, 1], [1.16, 1]); // the visible zoom-OUT
+  // The chat is essentially opaque for the whole unlock, so you actually WATCH it
+  // shrink into place (a fade would hide the zoom). Just a very quick lead-in fade
+  // over the first ~12% avoids a hard pop when the lock starts moving.
+  const chatOpacity = interpolate(frame, [unlockStart, unlockStart + Math.round(unlock * 0.12)], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });

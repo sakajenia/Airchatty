@@ -48,7 +48,12 @@ export const ChatReel: React.FC<ChatProps & {status?: ChatStatus}> = (props) => 
 
   // Header: the avatar cluster + names of the people you're chatting with, and
   // a "date · listing" subtitle that clips with an ellipsis when too long.
-  const cluster: HeaderAvatar[] = people.map((p) => ({name: p.name, src: p.avatar}));
+  // The circle cluster shows EVERY account in the thread — the guests PLUS the
+  // host (you) — so it always reads as (number of guests + 1), like the app.
+  const cluster: HeaderAvatar[] = [
+    ...people.map((p) => ({name: p.name, src: p.avatar})),
+    {name: props.hostName, src: props.hostAvatar},
+  ];
   const names = people.map((p) => p.name);
   const headerTitle =
     names.length <= 3 ? names.join(', ') : `${names.slice(0, 2).join(', ')} and ${names.length - 2} others`;
