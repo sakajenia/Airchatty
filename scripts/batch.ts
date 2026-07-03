@@ -397,6 +397,11 @@ async function main() {
           composition,
           serveUrl,
           codec: 'h264',
+          // Standard broadcast color tagging (limited-range BT.709). Without it
+          // the encode comes out yuvj420p FULL range + BT.601, which many
+          // players (phones, hardware decoders) misinterpret: everything above
+          // ~235 clips to pure white and the #f5f5f5 bubbles disappear.
+          colorSpace: 'bt709',
           outputLocation: outFile,
           inputProps: introProps,
           concurrency: 1, // most stable on small/limited hosts

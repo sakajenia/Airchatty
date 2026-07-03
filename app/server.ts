@@ -99,6 +99,7 @@ app.post('/render', async (req, res) => {
       composition,
       serveUrl: url,
       codec: 'h264',
+      colorSpace: 'bt709', // limited-range BT.709 — safe on every player (see batch.ts)
       outputLocation: outFile,
       inputProps: props,
       concurrency: 2,

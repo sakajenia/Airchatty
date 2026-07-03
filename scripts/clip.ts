@@ -34,6 +34,7 @@ async function main() {
     composition,
     serveUrl,
     codec: 'h264',
+    colorSpace: 'bt709', // limited-range BT.709 — safe on every player (see batch.ts)
     outputLocation: outPath,
     inputProps,
     concurrency: 1,
