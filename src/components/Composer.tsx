@@ -40,31 +40,34 @@ export const Composer: React.FC<{
   // Crucially the pill lives in NORMAL FLOW (a spacer of its exposed height),
   // so the whole composer grows and the chat above is pushed up — it never
   // overlaps the timestamps / read-receipts.
-  const EXPOSED = 92; // visible pill height above the card
-  const TUCK = 38; // px hidden behind the card (≥ radius, so bottom corners vanish)
+  const EXPOSED = 88; // visible band height above the input row (~30px @384)
+  const TUCK = 40; // px hidden behind the input row (≥ radius, so bottom corners vanish)
   const PILL_H = EXPOSED + TUCK;
-  const PILL_R = 36; // top-corner radius
-  const PILL_INSET = 8; // each side, relative to the card edges
+  const PILL_R = 40; // top-corner radius (matches the composer card)
 
+  // The "sta scrivendo" strip is a FULL-WIDTH band, edge to edge (measured from
+  // the reference: it spans the whole screen width, x=0 → the right edge), light
+  // grey with gently rounded top corners — NOT an inset pill.
   const typingArea = typingName ? (
     <div style={{height: EXPOSED * eEase, position: 'relative'}}>
       <div
         style={{
           position: 'absolute',
-          left: PILL_INSET,
-          right: PILL_INSET,
+          left: 0,
+          right: 0,
           top: 0,
           height: PILL_H,
           boxSizing: 'border-box',
           paddingBottom: TUCK, // centres the content in the EXPOSED band, not the whole pill
-          background: '#f6f6f6',
-          borderRadius: PILL_R,
+          background: '#f4f4f4',
+          borderTopLeftRadius: PILL_R,
+          borderTopRightRadius: PILL_R,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           gap: 12,
           zIndex: 0,
-          transform: `translateY(${(1 - eEase) * PILL_H}px)`, // rises from behind the card
+          transform: `translateY(${(1 - eEase) * PILL_H}px)`, // rises from behind the input row
         }}
       >
         <div style={{display: 'flex', alignItems: 'center', gap: 5, height: 16}}>
@@ -105,7 +108,8 @@ export const Composer: React.FC<{
         borderTopLeftRadius: 40,
         borderTopRightRadius: 40,
         boxShadow: '0 -2px 10px rgba(0,0,0,0.045)',
-        padding: '0 34px',
+        // no horizontal padding on the card itself, so the full-width typing
+        // band can reach the screen edges; the input row carries its own inset
         fontFamily: theme.font,
         flexShrink: 0,
       }}
@@ -116,7 +120,7 @@ export const Composer: React.FC<{
           style={{
             position: 'relative',
             zIndex: 1,
-            padding: '40px 0 30px',
+            padding: '40px 34px 30px',
             background: theme.white,
           }}
         >

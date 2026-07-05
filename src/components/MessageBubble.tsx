@@ -130,7 +130,7 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
     <div
       style={{
         width: 470,
-        borderRadius: 44,
+        borderRadius: 38,
         overflow: 'hidden',
         background: theme.incomingBubble,
         lineHeight: 0,
@@ -146,8 +146,9 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
         // and scaled ×2.8125 to the 1080 canvas: single-line bubble ≈ 100px tall
         // (50px line + 25px vertical padding), text cap-height ≈ 28px → 36px font.
         padding: '25px 34px',
-        // uniform squircle-round corners, like the real app (no flattened corner)
-        borderRadius: 50,
+        // rounded RECTANGLE — the real app is NOT a pill. Measured from the
+        // reference by fitting the corner arc: ~14px @384 → 38px on this canvas.
+        borderRadius: 38,
         background: isYou ? theme.outgoingBubble : theme.incomingBubble,
         color: isYou ? theme.outgoingText : theme.incomingText,
         fontSize: 36,
