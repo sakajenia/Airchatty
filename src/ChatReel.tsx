@@ -18,7 +18,6 @@ import {InputBar} from './components/InputBar';
 import {Composer} from './components/Composer';
 import {Keyboard, keyForChar, layoutForChar, suggestionsFor, KEYBOARD_HEIGHT, KbMode} from './components/Keyboard';
 import {MessageBubble, matureFrames} from './components/MessageBubble';
-import {TypingIndicator} from './components/TypingIndicator';
 import {DateSeparator} from './components/DateSeparator';
 import {WeideOutro} from './components/WeideOutro';
 

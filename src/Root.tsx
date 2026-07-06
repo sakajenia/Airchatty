@@ -1,17 +1,13 @@
 import React from 'react';
 import {Composition, registerRoot} from 'remotion';
 import {ChatReel} from './ChatReel';
-import {Wireframe} from './Wireframe';
 import {chatPropsSchema, ChatProps, DEFAULT_PROPS, DEFAULT_ITEMS} from './schema';
 import {buildTimeline, outroFrames} from './timeline';
 import {LockScreen} from './components/LockScreen';
 import {lockScreenFor} from './lockscreen';
 import {IntroDisclaimer} from './components/IntroDisclaimer';
-import {INTRO_DISCLAIMERS} from './introDisclaimers';
+import {INTRO_DISCLAIMERS, pickDisclaimer} from './introDisclaimers';
 import {IntroChat, IntroChatProps, prepareIntroChat, introChatDuration} from './Intro';
-import {pickDisclaimer} from './introDisclaimers';
-import {KeyboardPreview} from './components/KeyboardPreview';
-import {FontDebug} from './components/FontDebug';
 
 const FPS = 30;
 const WIDTH = 1080;
@@ -37,8 +33,30 @@ const introChatProps: IntroChatProps = {
   },
 };
 
-export const RemotionRoot: React.FC = () => {
-  return (
+export const RemotionRoot: React.FC = () => (
+  <>
+    {/* The production composition: black disclaimer → lock screen → unlock → chat */}
+    <Composition
+      id="IntroChat"
+      component={IntroChat}
+      fps={FPS}
+      width={WIDTH}
+      height={HEIGHT}
+      durationInFrames={900}
+      defaultProps={introChatProps as never}
+      calculateMetadata={({props}) => {
+        const prepared = prepareIntroChat(props as IntroChatProps, FPS);
+        return {
+          durationInFrames: introChatDuration(prepared, FPS),
+          props: prepared,
+          fps: FPS,
+          width: WIDTH,
+          height: HEIGHT,
+        };
+      }}
+    />
+
+    {/* The chat alone (no intro) — the web app's live preview + render. */}
     <Composition
       id="ChatReel"
       component={ChatReel}
@@ -63,13 +81,8 @@ export const RemotionRoot: React.FC = () => {
         };
       }}
     />
-  );
-};
 
-export const RootWithWireframe: React.FC = () => (
-  <>
-    <RemotionRoot />
-    <Composition id="HeaderWireframe" component={Wireframe} fps={30} width={1080} height={940} durationInFrames={1} />
+    {/* Individual scenes, kept for design review in Remotion Studio. */}
     <Composition
       id="IntroDisclaimer"
       component={IntroDisclaimer}
@@ -94,36 +107,7 @@ export const RootWithWireframe: React.FC = () => (
         message: 'Hi',
       }}
     />
-    <Composition
-      id="Keyboard"
-      component={KeyboardPreview}
-      fps={FPS}
-      width={WIDTH}
-      height={HEIGHT}
-      durationInFrames={1}
-      defaultProps={{mode: 'letters' as const, pressedKey: 'g'}}
-    />
-    <Composition id="FontDebug" component={FontDebug} fps={FPS} width={1080} height={1920} durationInFrames={1} />
-    <Composition
-      id="IntroChat"
-      component={IntroChat}
-      fps={FPS}
-      width={WIDTH}
-      height={HEIGHT}
-      durationInFrames={900}
-      defaultProps={introChatProps as never}
-      calculateMetadata={({props}) => {
-        const prepared = prepareIntroChat(props as IntroChatProps, FPS);
-        return {
-          durationInFrames: introChatDuration(prepared, FPS),
-          props: prepared,
-          fps: FPS,
-          width: WIDTH,
-          height: HEIGHT,
-        };
-      }}
-    />
   </>
 );
 
-registerRoot(RootWithWireframe);
+registerRoot(RemotionRoot);

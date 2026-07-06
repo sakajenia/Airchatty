@@ -23,6 +23,7 @@
  */
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import {execSync} from 'child_process';
 import {bundle} from '@remotion/bundler';
 import {selectComposition, renderMedia} from '@remotion/renderer';
@@ -36,36 +37,60 @@ import {pickDisclaimer} from '../src/introDisclaimers';
 /** Seconds into notify-intro.wav where the cue cuts from black to the lock screen. */
 const INTRO_MARKER_SEC = 1.44;
 
-/** Mean luminance (0..255) of a horizontal band of an image wallpaper, cached.
- *  y0/y1 are fractions of the image height. Returns 255 (assume light) on error. */
-const brightCache: Record<string, number> = {};
-function bandBrightness(rel: string, y0: number, y1: number): number {
-  const key = `${rel}:${y0}:${y1}`;
-  if (key in brightCache) return brightCache[key];
-  let val = 255;
+/** Frames rendered in parallel. Auto-scales to the machine (leave 1 core for the
+ *  encoder); override with CONCURRENCY=n when a host needs a different setting. */
+const RENDER_CONCURRENCY =
+  Number(process.env.CONCURRENCY) || Math.max(2, Math.min(4, os.cpus().length - 1));
+
+/**
+ * Brightness of the two wallpaper bands that drive the adaptive UI: behind the
+ * CLOCK (top band → light/dark glass digits) and behind the NOTIFICATION
+ * (mid band → light/dark text). One python call samples both bands at once,
+ * and results persist in .cache/wallpaper-brightness.json so a wallpaper is
+ * only ever analysed ONCE across all batch runs (before: 2 subprocesses ×
+ * every wallpaper in the library × every run).
+ */
+type Bands = {clock: number; notif: number};
+const BRIGHT_CACHE_FILE = () => path.join(ROOT, '.cache', 'wallpaper-brightness.json');
+let brightCache: Record<string, Bands> | null = null;
+function wallpaperBands(rel: string): Bands {
+  if (brightCache == null) {
+    try {
+      brightCache = JSON.parse(fs.readFileSync(BRIGHT_CACHE_FILE(), 'utf8'));
+    } catch {
+      brightCache = {};
+    }
+  }
+  const cache = brightCache as Record<string, Bands>;
+  if (rel in cache) return cache[rel];
+  let val: Bands = {clock: 255, notif: 255}; // on error assume light → dark text/glass
   try {
     const abs = path.join(ROOT, 'public', rel);
     const py =
       `from PIL import Image;im=Image.open(${JSON.stringify(abs)}).convert('L');w,h=im.size;` +
-      `c=im.crop((int(w*0.06),int(h*${y0}),int(w*0.94),int(h*${y1})));d=list(c.getdata());print(sum(d)/len(d))`;
-    val = parseFloat(execSync(`python3 -c ${JSON.stringify(py)}`, {encoding: 'utf8'}).trim());
+      `b=lambda y0,y1:(lambda c:sum(c.getdata())/(c.width*c.height))(im.crop((int(w*0.06),int(h*y0),int(w*0.94),int(h*y1))));` +
+      `print(b(0.13,0.36),b(0.42,0.55))`;
+    const [c, n] = execSync(`python3 -c ${JSON.stringify(py)}`, {encoding: 'utf8'}).trim().split(/\s+/).map(Number);
+    val = {clock: c, notif: n};
   } catch {
-    val = 255; // if we can't sample, assume a light image → dark text/glass
+    /* keep the light-image default */
   }
-  brightCache[key] = val;
+  cache[rel] = val;
+  try {
+    fs.mkdirSync(path.dirname(BRIGHT_CACHE_FILE()), {recursive: true});
+    fs.writeFileSync(BRIGHT_CACHE_FILE(), JSON.stringify(cache, null, 1));
+  } catch {
+    /* cache write is best-effort */
+  }
   return val;
 }
 
 /** Dark BEHIND the notification (mid-screen band) → notification uses light text. */
-function notifIsDark(rel: string): boolean {
-  return bandBrightness(rel, 0.42, 0.55) < 130;
-}
+const notifIsDark = (rel: string) => wallpaperBands(rel).notif < 130;
 /** Dark BEHIND the clock (top band, where the big digits sit) → light glass clock.
  *  Sampled separately from the notification: a wallpaper's sky can be bright while
  *  its mid-screen is dark (or vice-versa), and the clock must adapt to ITS region. */
-function clockIsDark(rel: string): boolean {
-  return bandBrightness(rel, 0.13, 0.36) < 138;
-}
+const clockIsDark = (rel: string) => wallpaperBands(rel).clock < 138;
 
 /**
  * Pick a lock-screen wallpaper for a video, deterministically from the seed
@@ -85,15 +110,19 @@ function pickWallpaper(seed: string): {wallpaper: string; dark: boolean; clockDa
   } catch {
     /* none yet */
   }
-  const pool = imgs.length
-    ? imgs.map((f) => ({wallpaper: f, dark: notifIsDark(f), clockDark: clockIsDark(f)}))
-    : WALLPAPERS.map((w) => ({wallpaper: w.css, dark: w.dark, clockDark: w.dark}));
   let h = 2166136261 >>> 0;
   for (let i = 0; i < seed.length; i++) {
     h ^= seed.charCodeAt(i);
     h = Math.imul(h, 16777619) >>> 0;
   }
-  return pool[h % pool.length] || {wallpaper: WALLPAPERS[0].css, dark: WALLPAPERS[0].dark, clockDark: WALLPAPERS[0].dark};
+  // Pick the file FIRST by hash, then analyse brightness for that one only —
+  // never the whole library.
+  if (imgs.length) {
+    const f = imgs[h % imgs.length];
+    return {wallpaper: f, dark: notifIsDark(f), clockDark: clockIsDark(f)};
+  }
+  const w = WALLPAPERS[h % WALLPAPERS.length] ?? WALLPAPERS[0];
+  return {wallpaper: w.css, dark: w.dark, clockDark: w.dark};
 }
 
 /** Download the Twemoji SVG for every emoji used so they render in full colour. */
@@ -404,7 +433,7 @@ async function main() {
           colorSpace: 'bt709',
           outputLocation: outFile,
           inputProps: introProps,
-          concurrency: 1, // most stable on small/limited hosts
+          concurrency: RENDER_CONCURRENCY,
           timeoutInMilliseconds: 180000,
         });
         ok = true;
