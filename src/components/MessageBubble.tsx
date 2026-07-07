@@ -1,5 +1,5 @@
 import React from 'react';
-import {interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
+import {Easing, interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
 import {theme, useNaturalHeight} from '../util';
 import {Avatar} from './Avatar';
 import {EmojiText} from './EmojiText';
@@ -112,9 +112,16 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
   const [contentRef, naturalH] = useNaturalHeight();
 
   const local = frame - revealFrame;
-  // The list makes room essentially instantly — the reference shows the bubble
-  // at its full size on the very frame it appears.
-  const open = interpolate(local, [0, 2], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  // The list makes room with a quick EASED push (~0.27s) instead of an instant
+  // snap: the wrapper grows bottom-anchored, so the bubble arrives already full
+  // size and the content above scrolls up smoothly — the real app's behaviour.
+  // (An instant 2-frame jump was the biggest "CGI" tell once the screen filled.)
+  const openF = Math.max(2, Math.round(fps * 0.27));
+  const open = interpolate(local, [0, openF], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: Easing.out(Easing.cubic),
+  });
   // Content: invisible → linear fade to full ink, starting one frame after the
   // container (measured from the recording). Your own sent messages fade the
   // same way, just without the delay.
@@ -167,25 +174,21 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
 
   const column = (
     <div style={{display: 'flex', flexDirection: 'column', alignItems: isYou ? 'flex-end' : 'flex-start', flex: 1}}>
-      {isFirstOfGroup &&
-        (isYou ? (
-          <div style={{fontSize: 24, color: theme.ash, margin: '0 10px 8px 0', fontWeight: 500}}>
-            {timeLabel}
-          </div>
-        ) : (
-          // aligned with the TEXT inside the bubble (not its edge), per the reference
-          <div style={{fontSize: 24, color: theme.ash, margin: '0 0 8px 34px', fontWeight: 500}}>
-            <span style={{fontWeight: 600, color: theme.ink}}>{senderName}</span>
-            {` · ${senderRole}  ${timeLabel}`}
-          </div>
-        ))}
+      {/* Sender label only on the OTHERS' messages — the reference never shows a
+          timestamp above your own bubbles. Gap label→bubble measured 7px @384 → 20. */}
+      {isFirstOfGroup && !isYou && (
+        <div style={{fontSize: 24, color: theme.ash, margin: '0 0 20px 34px', fontWeight: 400}}>
+          <span style={{fontWeight: 600, color: theme.ink}}>{senderName}</span>
+          {` · ${senderRole}  ${timeLabel}`}
+        </div>
+      )}
       {/* wrapper shrinks to the bubble so the reaction hugs its corner */}
       <div style={{maxWidth: 740}}>
         {bubble}
         {reaction && <ReactionBadge emoji={reaction} isYou={isYou} revealFrame={revealFrame} />}
       </div>
       {readReceipt && (
-        <div style={{fontSize: 22, color: theme.ash, margin: '8px 8px 0 0', fontWeight: 500}}>
+        <div style={{fontSize: 22, color: theme.ash, margin: '8px 8px 0 0', fontWeight: 400}}>
           {readReceipt}
         </div>
       )}
@@ -193,13 +196,16 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
   );
 
   return (
-    <div style={{height: wrapperHeight, overflow: 'hidden', flexShrink: 0}}>
+    // Bottom-anchored reveal: the bubble is pinned to the wrapper's bottom edge
+    // (already full size) while the wrapper's eased growth pushes the thread up.
+    <div style={{height: wrapperHeight, overflow: 'hidden', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end'}}>
       <div
         ref={contentRef}
         style={{
-          // grouped bubbles sit ~16px apart in the reference (6px @384)
-          paddingTop: isFirstOfGroup ? 30 : 16,
+          // grouped bubbles sit ~11px apart in the reference (4px @384)
+          paddingTop: isFirstOfGroup ? 30 : 11,
           opacity: measured ? 1 : 0,
+          flexShrink: 0,
         }}
       >
         {isYou ? (

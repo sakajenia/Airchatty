@@ -27,33 +27,30 @@ export const StatusBar: React.FC<{
       position: 'relative',
     }}
   >
-    {/* time + silenced bell */}
-    <div style={{display: 'flex', alignItems: 'center', gap: 12, fontSize: 34, fontWeight: 600}}>
+    {/* time — bare, exactly like the real status bar (no bell/DND glyph) */}
+    <div style={{display: 'flex', alignItems: 'center', fontSize: 34, fontWeight: 600}}>
       <span>{time}</span>
-      <svg width="26" height="26" viewBox="0 0 24 24" fill={theme.ink}>
-        <path d="M12 3a6 6 0 0 0-6 6v3.6l-1.5 2.4A1 1 0 0 0 5.3 17h13.4a1 1 0 0 0 .8-1.6L18 13V9a6 6 0 0 0-6-6zm0 17a2.4 2.4 0 0 0 2.3-1.8H9.7A2.4 2.4 0 0 0 12 20z" />
-        <path d="M2 4l18 16" stroke={theme.ink} strokeWidth="1.6" />
-      </svg>
     </div>
 
-    {/* Dynamic Island — idle (front camera only, no activity dot) */}
+    {/* Dynamic Island — idle (front camera only, no activity dot).
+        True HIG geometry: 126×37.33pt → ~354×105px at this canvas scale. */}
     <div
       style={{
         position: 'absolute',
         left: '50%',
-        top: 22,
+        top: 14,
         transform: 'translateX(-50%)',
-        width: 264,
-        height: 74,
+        width: 354,
+        height: 105,
         background: '#000',
-        borderRadius: 40,
+        borderRadius: 53,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'flex-end',
-        padding: '0 26px',
+        padding: '0 34px',
       }}
     >
-      <div style={{width: 18, height: 18, borderRadius: 9, background: '#0c0c0e'}} />
+      <div style={{width: 24, height: 24, borderRadius: 12, background: '#0c0c0e'}} />
     </div>
 
     {/* cellular · wi-fi · battery — identical design to the lock screen */}
@@ -160,20 +157,23 @@ export const ChatHeader: React.FC<{
             fontSize: 28,
             fontWeight: 600,
             color: theme.ink,
-            background: '#ebebeb',
+            background: '#f2f2f2', // sampled ~243-247 in the reference
           }}
         >
           Details
         </div>
       </div>
 
+      {/* Name and subtitle read at COMPARABLE size in the real app — the
+          contrast is almost all weight/colour, not scale (measured: both cap
+          heights ≈ 20-21px @1080). */}
       <div
         style={{
-          fontSize: 46,
+          fontSize: 36,
           fontWeight: 700,
           color: theme.ink,
           marginTop: 16,
-          letterSpacing: -0.4,
+          letterSpacing: -0.3,
           maxWidth: 900,
           whiteSpace: 'nowrap',
           overflow: 'hidden',
@@ -185,9 +185,9 @@ export const ChatHeader: React.FC<{
       <div
         style={{
           fontSize: 34,
-          fontWeight: 500,
+          fontWeight: 400,
           color: theme.ash,
-          marginTop: 10,
+          marginTop: 14,
           maxWidth: 610, // measured from the references — always clips with "…"
           whiteSpace: 'nowrap',
           overflow: 'hidden',

@@ -317,7 +317,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({data, guestName, guestSub
               width={46}
               height={46}
               viewBox="0 0 512 512"
-              style={{position: 'absolute', left: -6, bottom: -4, borderRadius: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.35)'}}
+              style={{position: 'absolute', right: -6, bottom: -4, borderRadius: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.35)'}}
             >
               <rect width="512" height="512" rx="15%" fill="#ff5a5f" />
               <path

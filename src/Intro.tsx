@@ -78,12 +78,10 @@ export const IntroChat: React.FC<IntroChatProps> = (props) => {
   // the (hidden) chat early enough that, by the unlock, its first bubble has
   // appeared and settled. The pre-roll is invisible: it's behind the opaque lock
   // screen and under chatOpacity=0 until the unlock begins.
-  const {segments} = buildTimeline(props.items, {
-    fps,
-    speed: props.speed,
-    typingFor: props.typingFor,
-    keyboard: props.keyboard,
-  });
+  const {segments} = React.useMemo(
+    () => buildTimeline(props.items, {fps, speed: props.speed, typingFor: props.typingFor, keyboard: props.keyboard}),
+    [props.items, fps, props.speed, props.typingFor, props.keyboard],
+  );
   const firstReveal = (segments.find((s) => s.kind === 'message') as MessageSeg | undefined)?.revealFrame ?? 0;
   const settle = Math.round(fps * 0.7);
   const chatSeqStart = Math.max(0, chatStart - firstReveal - settle);

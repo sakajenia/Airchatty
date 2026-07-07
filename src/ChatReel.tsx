@@ -30,7 +30,12 @@ export const ChatReel: React.FC<ChatProps & {status?: ChatStatus}> = (props) => 
   const {items, typingFor, keyboard, participants: people, headerDate, headerApt, speed, sound, status} = props;
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
-  const {segments, durationInFrames: chatDur} = buildTimeline(items, {fps, speed, typingFor, keyboard});
+  // The timeline (segments + keystroke plans) depends only on the props — never
+  // on the frame — so compute it once per render session, not per frame.
+  const {segments, durationInFrames: chatDur} = React.useMemo(
+    () => buildTimeline(items, {fps, speed, typingFor, keyboard}),
+    [items, fps, speed, typingFor, keyboard],
+  );
 
   // The status-bar clock is the live wall clock (same source as the message
   // timestamps), so the top-right time and the bubble times always agree — and
