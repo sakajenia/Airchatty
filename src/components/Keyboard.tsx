@@ -32,7 +32,9 @@ const ROW3_GAP = px(13.333);
 const LETTER_FS = px(25);
 const FUNC_FS = px(17.5);
 
-export const KEYBOARD_HEIGHT = Math.round(TOP_PAD + SUGG_H + (KEY_H * 4 + ROW_GAP * 3) + px(75.8));
+// No emoji/mic strip (px(75.8) in stock iOS): the keyboard ends right under the
+// last key row + a small safe-area pad, leaving more of the screen to the chat.
+export const KEYBOARD_HEIGHT = Math.round(TOP_PAD + SUGG_H + (KEY_H * 4 + ROW_GAP * 3) + px(14));
 
 export type KbMode = 'letters' | 'numbers' | 'symbols';
 
@@ -195,15 +197,8 @@ export const Keyboard: React.FC<{
         </Row>
       </div>
 
-      {/* bottom strip — emoji/globe (left) + dictation mic (right) */}
-      <div style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: `0 ${px(32)}px`}}>
-        <div style={{color: theme.ink, height: px(26.8)}}>
-          <Glyph name="emoji" h={px(26.8)} />
-        </div>
-        <div style={{color: theme.ink, height: px(24)}}>
-          <Glyph name="mic" h={px(24)} />
-        </div>
-      </div>
+      {/* No emoji/mic strip: dropped (with its height) so the keyboard takes
+          less of the screen and the chat above gets more room. */}
     </div>
   );
 };

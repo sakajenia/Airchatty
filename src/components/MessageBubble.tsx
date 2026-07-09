@@ -138,6 +138,7 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
       style={{
         width: 470,
         borderRadius: 38,
+        ...(isYou ? {borderBottomRightRadius: 8} : {borderBottomLeftRadius: 8}),
         overflow: 'hidden',
         background: theme.incomingBubble,
         lineHeight: 0,
@@ -155,7 +156,11 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
         padding: '25px 34px',
         // rounded RECTANGLE — the real app is NOT a pill. Measured from the
         // reference by fitting the corner arc: ~14px @384 → 38px on this canvas.
+        // The bottom corner on the SCREEN-EDGE side (the chat "tail") is nearly
+        // flat, per the user's real-app screenshots: incoming → bottom-left,
+        // outgoing → bottom-right.
         borderRadius: 38,
+        ...(isYou ? {borderBottomRightRadius: 8} : {borderBottomLeftRadius: 8}),
         background: isYou ? theme.outgoingBubble : theme.incomingBubble,
         color: isYou ? theme.outgoingText : theme.incomingText,
         fontSize: 36,
@@ -174,14 +179,20 @@ export const MessageBubble: React.FC<ChatBubbleProps> = ({
 
   const column = (
     <div style={{display: 'flex', flexDirection: 'column', alignItems: isYou ? 'flex-end' : 'flex-start', flex: 1}}>
-      {/* Sender label only on the OTHERS' messages — the reference never shows a
-          timestamp above your own bubbles. Gap label→bubble measured 7px @384 → 20. */}
-      {isFirstOfGroup && !isYou && (
-        <div style={{fontSize: 24, color: theme.ash, margin: '0 0 20px 34px', fontWeight: 400}}>
-          <span style={{fontWeight: 600, color: theme.ink}}>{senderName}</span>
-          {` · ${senderRole}  ${timeLabel}`}
-        </div>
-      )}
+      {/* Sender label on the others' messages; on your own, just the time —
+          right-aligned above the bubble (verified in the user's real-app
+          screenshots: "09:13" over the dark bubble). Gap measured 7px @384 → 20. */}
+      {isFirstOfGroup &&
+        (isYou ? (
+          <div style={{fontSize: 24, color: theme.ash, margin: '0 10px 20px 0', fontWeight: 400}}>
+            {timeLabel}
+          </div>
+        ) : (
+          <div style={{fontSize: 24, color: theme.ash, margin: '0 0 20px 34px', fontWeight: 400}}>
+            <span style={{fontWeight: 600, color: theme.ink}}>{senderName}</span>
+            {` · ${senderRole}  ${timeLabel}`}
+          </div>
+        ))}
       {/* wrapper shrinks to the bubble so the reaction hugs its corner */}
       <div style={{maxWidth: 740}}>
         {bubble}

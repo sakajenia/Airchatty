@@ -27,7 +27,7 @@ export const theme = {
   outgoingBubble: '#3a3a3a', // dark charcoal bubble for "you" (NOT pink)
   outgoingText: '#ffffff',
 
-  // Cereal VF is proprietary; Mulish (loaded via Google Fonts) is the closest
+  // Cereal VF is proprietary; DM Sans (embedded, OFL) is the closest
   // free match. Falls back through the documented stack.
   font: `${brandFont}, "Circular", -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`,
 };
